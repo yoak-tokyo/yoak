@@ -89,8 +89,9 @@ async function saveToNotion(env: ContactEnv, inquiry: Inquiry): Promise<string> 
     }),
   });
   if (!res.ok) throw new Error(`Notion API ${res.status}: ${await res.text()}`);
-  const page = (await res.json()) as { url: string };
-  return page.url;
+  // 挿入だけのトークンでは作成したページの中身（url など）は返らず、id だけが返る。id から URL を組み立てる
+  const page = (await res.json()) as { id: string };
+  return `https://www.notion.so/${page.id.replace(/-/g, "")}`;
 }
 
 const slackEscape = (s: string) =>
