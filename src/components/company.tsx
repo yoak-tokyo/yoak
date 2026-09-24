@@ -80,7 +80,7 @@ export function Footer() {
   return (
     <footer className="overflow-hidden bg-ink px-5 pt-20 pb-8 text-white md:px-10 md:pt-28">
       <div className="mx-auto max-w-[1280px]">
-        <div className="grid gap-14 border-t border-line-inv pt-8 md:grid-cols-12 md:pt-10">
+        <div className="grid gap-14 md:grid-cols-12">
           <div className="md:col-span-5">
             <p className="text-[clamp(1.8rem,3.12vw,2.7rem)] leading-[1.5] font-medium">
               {/* 読点のあとで改行する */}
@@ -123,13 +123,13 @@ export function Footer() {
           </Reveal>
         </div>
 
-        <div className="mt-12 grid gap-4 border-t border-line-inv pt-6 md:mt-16 md:grid-cols-3 md:items-center">
-          <p className="font-en text-xs tracking-[0.08em] text-white/50 md:col-start-2 md:text-center">
+        <div className="mt-12 flex flex-col gap-4 border-t border-line-inv pt-6 md:mt-16 md:flex-row md:items-center md:justify-between">
+          <p className="font-en text-xs tracking-[0.08em] text-white/50">
             © 2025 Yoak, LLC.
           </p>
           <a
             href="#top"
-            className="label text-white/70 transition-colors hover:text-white md:col-start-3 md:justify-self-end"
+            className="label text-white/70 transition-colors hover:text-white"
           >
             back to top ↑
           </a>

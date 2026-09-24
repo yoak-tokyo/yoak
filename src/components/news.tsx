@@ -17,7 +17,7 @@ function NewsRow({ item }: { item: NewsItem }) {
         {item.href && (
           <span
             aria-hidden="true"
-            className="ml-2 inline-block text-mute transition-transform duration-500 ease-out-expo group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            className="ml-2 inline-block text-mute transition-transform duration-500 ease-out-expo group-hover:translate-x-1 group-hover:-translate-y-0.5"
           >
             {external ? "↗" : "→"}
           </span>
@@ -29,13 +29,26 @@ function NewsRow({ item }: { item: NewsItem }) {
   const className = "grid gap-2 py-6 md:grid-cols-[5.5rem_5.5rem_1fr] md:items-baseline md:gap-6 md:py-7";
 
   if (!item.href) return <div className={className}>{content}</div>;
+  // ホバー：淡い面が下からせり上がり、中身が少し右へ寄り、下辺に線が引かれる
   return (
     <a
       href={item.href}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className={`group ${className} transition-opacity hover:opacity-60`}
+      className="group relative block"
     >
-      {content}
+      <span
+        aria-hidden="true"
+        className="absolute inset-0 origin-bottom scale-y-0 bg-mist transition-transform duration-700 ease-out-expo group-hover:scale-y-100 group-focus-visible:scale-y-100"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-ink transition-transform duration-700 ease-out-expo group-hover:scale-x-100 group-focus-visible:scale-x-100"
+      />
+      <span
+        className={`relative ${className} transition-transform md:pr-4 duration-700 ease-out-expo md:group-hover:translate-x-4 md:group-focus-visible:translate-x-4`}
+      >
+        {content}
+      </span>
     </a>
   );
 }

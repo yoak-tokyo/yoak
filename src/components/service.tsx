@@ -115,7 +115,7 @@ export function Service() {
                   )}
                   <p className="mt-3 text-xs tracking-[0.1em] text-mute">{item.category}</p>
                 </Reveal>
-                <Reveal delay={0.1} className="mt-8 border-l border-line pl-4">
+                <Reveal delay={0.1} className="mt-8">
                   <p className="label text-mute">we want</p>
                   <p className="mt-2 text-lg leading-[1.8] font-medium">{item.yoku}</p>
                 </Reveal>
