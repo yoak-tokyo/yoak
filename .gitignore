@@ -42,3 +42,7 @@ next-env.d.ts
 
 # cloudflare
 .wrangler/
+
+# Notion CMS（ビルド時に生成）
+/.cms/
+/public/cms/

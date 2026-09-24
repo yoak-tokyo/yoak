@@ -76,3 +76,80 @@ body {
     animation: none;
   }
 }
+
+/* News 詳細ページの本文（Notion から生成した HTML） */
+.cms-body {
+  font-size: 15px;
+  line-height: 2.1;
+  color: rgb(17 17 17 / 0.8);
+}
+.cms-body > * + * {
+  margin-top: 1.5em;
+}
+.cms-body h2 {
+  margin-top: 2.5em;
+  font-size: 1.25rem;
+  line-height: 1.6;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.cms-body h3 {
+  margin-top: 2em;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.cms-body ul,
+.cms-body ol {
+  padding-left: 1.25em;
+}
+.cms-body ul {
+  list-style: disc;
+}
+.cms-body ol {
+  list-style: decimal;
+}
+.cms-body li + li {
+  margin-top: 0.4em;
+}
+.cms-body a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.cms-body blockquote,
+.cms-body aside {
+  border-left: 1px solid var(--color-ink);
+  padding-left: 1em;
+}
+.cms-body aside {
+  background: var(--color-mist);
+  padding: 1em 1.25em;
+  border-left: 0;
+}
+.cms-body hr {
+  border: 0;
+  border-top: 1px solid var(--color-line);
+}
+.cms-body code {
+  font-size: 0.9em;
+  background: var(--color-mist);
+  padding: 0.1em 0.35em;
+}
+.cms-body pre {
+  overflow-x: auto;
+  background: var(--color-mist);
+  padding: 1em 1.25em;
+}
+.cms-body pre code {
+  background: none;
+  padding: 0;
+}
+.cms-body figure img {
+  width: 100%;
+  height: auto;
+}
+.cms-body figcaption {
+  margin-top: 0.75em;
+  font-size: 12px;
+  color: var(--color-mute);
+}

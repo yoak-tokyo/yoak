@@ -3,6 +3,7 @@
 import { useId, useState, type FormEvent } from "react";
 import { contact } from "@/content/contact";
 import { Reveal, SectionLabel } from "./reveal";
+import { TURNSTILE_SITE_KEY, Turnstile } from "./turnstile";
 
 type FormState = {
   name: string;
@@ -24,11 +25,21 @@ const initialState: FormState = {
 
 type FieldErrors = Partial<Record<keyof FormState, string>>;
 
-// バックエンド未定のため、送信処理は未実装のスタブ。
-// TODO: 送信先（フォーム受付API・メール送信サービスなど）が決まり次第、実装に差し替える。
-async function sendInquiry(data: FormState): Promise<{ ok: false; message: string }> {
-  void data;
-  return { ok: false, message: contact.pendingErrorMessage };
+// worker/contact.ts の /api/contact に送信し、Notion に保存・Slack に通知する
+async function sendInquiry(
+  data: FormState,
+  extra: { turnstileToken: string; website: string },
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { agree, ...fields } = data;
+  void agree;
+  const res = await fetch("/api/contact", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...fields, ...extra }),
+  });
+  const body = (await res.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
+  if (res.ok && body?.ok) return { ok: true };
+  return { ok: false, message: body?.message ?? contact.errorMessage };
 }
 
 function validate(data: FormState): FieldErrors {
@@ -52,6 +63,9 @@ export function Contact() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [status, setStatus] = useState<"idle" | "submitting" | "error" | "success">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReset, setTurnstileReset] = useState(0);
+  const [website, setWebsite] = useState("");
 
   const nameId = useId();
   const companyId = useId();
@@ -69,20 +83,27 @@ export function Contact() {
     const nextErrors = validate(data);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setStatus("error");
+      setErrorMessage(contact.turnstileMessage);
+      return;
+    }
 
     setStatus("submitting");
     setErrorMessage(null);
     try {
-      const result = await sendInquiry(data);
+      const result = await sendInquiry(data, { turnstileToken, website });
       if (result.ok) {
         setStatus("success");
       } else {
         setStatus("error");
         setErrorMessage(result.message);
+        setTurnstileReset((n) => n + 1);
       }
     } catch {
       setStatus("error");
-      setErrorMessage(contact.pendingErrorMessage);
+      setErrorMessage(contact.errorMessage);
+      setTurnstileReset((n) => n + 1);
     }
   }
 
@@ -260,10 +281,27 @@ export function Contact() {
                 )}
               </div>
 
+              {/* ボット対策のダミー欄。人には見えず、入力されていたら送信を捨てる */}
+              <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+                <label>
+                  website
+                  <input
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                  />
+                </label>
+              </div>
+
+              <Turnstile onToken={setTurnstileToken} resetKey={turnstileReset} />
+
               {status === "error" && errorMessage && (
                 <div role="alert" className="border-t border-line pt-6 text-sm leading-[1.9] text-mute">
                   <p className="font-medium text-ink">{errorMessage}</p>
-                  <p className="mt-1">{contact.pendingErrorHint}</p>
+                  <p className="mt-1">{contact.errorHint}</p>
                 </div>
               )}
 

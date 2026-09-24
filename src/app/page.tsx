@@ -9,6 +9,7 @@ import { MissionValue } from "@/components/mission-value";
 import { News } from "@/components/news";
 import { Opening } from "@/components/opening";
 import { Service } from "@/components/service";
+import { getMembers, getNews } from "@/lib/cms";
 import { SmoothScroll } from "@/components/smooth-scroll";
 
 export default function Home() {
@@ -22,8 +23,8 @@ export default function Home() {
         <About />
         <Service />
         <MissionValue />
-        <Member />
-        <News />
+        <Member items={getMembers()} />
+        <News items={getNews()} />
         <Company />
         <Contact />
       </main>
