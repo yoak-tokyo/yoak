@@ -119,8 +119,12 @@ async function notifySlack(webhookUrl: string, inquiry: Inquiry, notionUrl: stri
         { type: "section", text: { type: "mrkdwn", text: "*📮 お問い合わせが届きました*" } },
         { type: "section", text: { type: "mrkdwn", text: lines.join("\n") } },
         { type: "section", text: { type: "mrkdwn", text: `*内容：*\n${quoted}` } },
-        // ボタンは Slack がアプリ側へ操作通知を送るため、Interactivity 未設定だと ⚠️ になる。ふつうのリンクにする
-        { type: "section", text: { type: "mrkdwn", text: `<${notionUrl}|→ Notion で開く>` } },
+        {
+          type: "actions",
+          elements: [
+            { type: "button", text: { type: "plain_text", text: "Notion で開く" }, url: notionUrl },
+          ],
+        },
       ],
     }),
   });
