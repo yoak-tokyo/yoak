@@ -97,22 +97,27 @@ const slackEscape = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 async function notifySlack(webhookUrl: string, inquiry: Inquiry, notionUrl: string) {
-  const excerpt = inquiry.message.length > 500 ? `${inquiry.message.slice(0, 500)}…` : inquiry.message;
-  const from = [inquiry.name, inquiry.company].filter(Boolean).map(slackEscape).join(" / ");
+  const excerpt = inquiry.message.length > 1000 ? `${inquiry.message.slice(0, 1000)}…` : inquiry.message;
+  // 本文は引用ブロックにして、項目と区別しやすくする
+  const quoted = slackEscape(excerpt)
+    .split("\n")
+    .map((line) => `>${line}`)
+    .join("\n");
+  const lines = [
+    `*種別：* ${slackEscape(inquiry.category)}`,
+    `*名前：* ${slackEscape(inquiry.name)}`,
+    `*会社名：* ${inquiry.company ? slackEscape(inquiry.company) : "—"}`,
+    `*メール：* ${slackEscape(inquiry.email)}`,
+  ];
   const res = await fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       text: `📮 お問い合わせが届きました（${inquiry.category}）`,
       blocks: [
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `*📮 お問い合わせが届きました*\n*${slackEscape(inquiry.category)}*　${from}\n${slackEscape(inquiry.email)}`,
-          },
-        },
-        { type: "section", text: { type: "mrkdwn", text: slackEscape(excerpt) } },
+        { type: "section", text: { type: "mrkdwn", text: "*📮 お問い合わせが届きました*" } },
+        { type: "section", text: { type: "mrkdwn", text: lines.join("\n") } },
+        { type: "section", text: { type: "mrkdwn", text: `*内容：*\n${quoted}` } },
         {
           type: "actions",
           elements: [
