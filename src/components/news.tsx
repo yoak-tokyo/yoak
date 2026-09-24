@@ -8,41 +8,16 @@ import { Reveal, SectionLabel } from "./reveal";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 function NewsRow({ item }: { item: NewsItem }) {
-  const content = (
-    <>
+  // すべての記事がサイト内のページを持つ。
+  // ホバー：一覧の中でホバー中の行以外が薄くなり、選んでいる行が浮かぶ
+  return (
+    <Link
+      href={`/news/${item.slug}`}
+      className="grid gap-2 py-6 transition-opacity duration-500 group-hover/list:opacity-35 hover:opacity-100! focus-visible:opacity-100! md:grid-cols-[5.5rem_5.5rem_1fr] md:items-baseline md:gap-6 md:py-7"
+    >
       <time className="font-en text-sm tracking-[0.06em] text-mute">{item.date}</time>
       <span className="label text-mute">{item.category}</span>
-      <span className="text-[15px] leading-[1.9]">
-        {item.title}
-        <span
-          aria-hidden="true"
-          className="ml-2 inline-block text-mute transition-transform duration-500 ease-out-expo group-hover:translate-x-1"
-        >
-          →
-        </span>
-      </span>
-    </>
-  );
-  // 日付とカテゴリは中身の幅に合わせた固定幅にして、タイトルとの間を詰める
-  const className = "grid gap-2 py-6 md:grid-cols-[5.5rem_5.5rem_1fr] md:items-baseline md:gap-6 md:py-7";
-
-  // すべての記事がサイト内のページを持つ。
-  // ホバー：淡い面が下からせり上がり、中身が少し右へ寄り、下辺に線が引かれる
-  return (
-    <Link href={`/news/${item.slug}`} className="group relative block">
-      <span
-        aria-hidden="true"
-        className="absolute inset-0 origin-bottom scale-y-0 bg-mist transition-transform duration-700 ease-out-expo group-hover:scale-y-100 group-focus-visible:scale-y-100"
-      />
-      <span
-        aria-hidden="true"
-        className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-ink transition-transform duration-700 ease-out-expo group-hover:scale-x-100 group-focus-visible:scale-x-100"
-      />
-      <span
-        className={`relative ${className} transition-transform md:pr-4 duration-700 ease-out-expo md:group-hover:translate-x-4 md:group-focus-visible:translate-x-4`}
-      >
-        {content}
-      </span>
+      <span className="text-[15px] leading-[1.9]">{item.title}</span>
     </Link>
   );
 }
@@ -58,7 +33,7 @@ export function News({ items }: { items: NewsItem[] }) {
           </Reveal>
         </div>
 
-        <ul className="md:col-span-8">
+        <ul className="group/list md:col-span-8">
           {items.map((item, i) => (
             <motion.li
               key={item.slug}
