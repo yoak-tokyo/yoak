@@ -6,8 +6,6 @@
 #   NOTION_TOKEN                     Notion の読み取り用インテグレーションのトークン
 #   CLOUDFLARE_API_TOKEN             Workers にデプロイできる API トークン
 #   CLOUDFLARE_ACCOUNT_ID            Cloudflare のアカウント ID
-# 必要な Variables:
-#   NEXT_PUBLIC_TURNSTILE_SITE_KEY   Turnstile のサイトキー（公開して問題ない値）
 
 name: Deploy CMS content
 
@@ -35,7 +33,6 @@ jobs:
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           CMS_REQUIRED: "1"
-          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
       - run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

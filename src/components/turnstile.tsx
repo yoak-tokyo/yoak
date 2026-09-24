@@ -3,8 +3,14 @@
 import { useEffect, useRef } from "react";
 
 // Cloudflare Turnstile（ボット判定）のウィジェット。
-// サイトキーは NEXT_PUBLIC_TURNSTILE_SITE_KEY（ビルド時の環境変数）。未設定なら何も表示しない。
-export const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
+// サイトキーは公開して問題ない値なのでコードに持つ（ホスト名は yoak.tokyo とプレビューの workers.dev のみ許可）。
+// `next dev` では Cloudflare のテスト用キー（常に成功）を使う。
+// NEXT_PUBLIC_TURNSTILE_SITE_KEY を設定すればそちらが優先される。
+const PRODUCTION_SITE_KEY = "0x4AAAAAAFCjQrKPu6PEcBa-";
+const TEST_SITE_KEY = "1x00000000000000000000AA";
+export const TURNSTILE_SITE_KEY =
+  process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ??
+  (process.env.NODE_ENV === "production" ? PRODUCTION_SITE_KEY : TEST_SITE_KEY);
 
 type TurnstileApi = {
   render(el: HTMLElement, options: Record<string, unknown>): string;

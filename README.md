@@ -53,13 +53,14 @@ News と Member は Notion の「コーポレートサイトCMS」ページの D
 
 | 環境 | 設定するもの |
 |---|---|
-| Cloudflare（Workers → Settings → Build → Variables and secrets） | `NOTION_TOKEN`（Secret）、`CMS_REQUIRED=1`、`NEXT_PUBLIC_TURNSTILE_SITE_KEY` |
-| GitHub（Settings → Secrets and variables → Actions） | Secrets: `NOTION_TOKEN` `CLOUDFLARE_API_TOKEN` `CLOUDFLARE_ACCOUNT_ID` ／ Variables: `NEXT_PUBLIC_TURNSTILE_SITE_KEY` |
+| Cloudflare（Workers → Settings → Build → Variables and secrets） | `NOTION_TOKEN`（Secret）、`CMS_REQUIRED=1` |
+| GitHub（Settings → Secrets and variables → Actions） | Secrets: `NOTION_TOKEN` `CLOUDFLARE_API_TOKEN` `CLOUDFLARE_ACCOUNT_ID` |
 
 ## お問い合わせ（Notion + Slack）
 
 フォームは `worker/contact.ts` の `POST /api/contact` に送信され、Notion の Contact DB に保存、Slack に通知する。
 ボット対策に Cloudflare Turnstile と、見えないダミー欄を使っている。
+Turnstile のサイトキーは `src/components/turnstile.tsx` に直接書いている（`next dev` ではテスト用キー）。
 
 ```sh
 npx wrangler secret put NOTION_CONTACT_TOKEN   # Contact DB に「追加だけ」できるインテグレーションのトークン
