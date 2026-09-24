@@ -33,6 +33,8 @@ npm run deploy       # ビルドして Cloudflare にデプロイ
 
 ## プレビューのパスワード保護
 
+プレビュー: https://yoak-corporate-site.yoak-corporate-site.workers.dev
+
 `worker/index.ts` で Basic 認証をかけている。ユーザー名は `wrangler.jsonc` の `vars.BASIC_AUTH_USER`、パスワードは Cloudflare のシークレットに保存している。
 
 ```sh
