@@ -8,9 +8,9 @@ import { Reveal, SectionLabel } from "./reveal";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const LINK_LABELS: Record<MemberLink["type"], string> = {
-  x: "x",
+  x: "X",
   note: "note",
-  instagram: "instagram",
+  instagram: "Instagram",
   portfolio: "portfolio",
 };
 
@@ -51,13 +51,9 @@ export function Member({ items }: { items: MemberItem[] }) {
                     </span>
                   )}
                 </div>
-                <div className="absolute inset-x-5 bottom-5 bg-paper/90 p-5 backdrop-blur md:inset-x-6 md:bottom-6">
-                  <p className="label text-mute">i want</p>
-                  <p className="mt-2 text-[15px] leading-[1.8] font-medium">{m.yoku}</p>
-                </div>
               </motion.div>
 
-              <Reveal delay={0.1 + i * 0.15} className="mt-6 flex items-baseline justify-between gap-4">
+              <Reveal delay={0.1 + i * 0.15} className="mt-9 flex items-baseline justify-between gap-4">
                 <div>
                   <h3 className="text-2xl font-medium tracking-[0.08em]">{m.name}</h3>
                   <p className="mt-2 font-en text-sm tracking-[0.06em] text-mute">{m.en}</p>
@@ -67,25 +63,28 @@ export function Member({ items }: { items: MemberItem[] }) {
               <Reveal as="p" delay={0.15 + i * 0.15} className="mt-5 text-sm leading-[2.1] text-ink/80">
                 {m.bio}
               </Reveal>
+              <Reveal delay={0.2 + i * 0.15} className="mt-6 bg-mist p-5">
+                <p className="label text-mute">I want</p>
+                <p className="mt-2 text-[15px] leading-[1.8] font-medium">{m.yoku}</p>
+              </Reveal>
               {m.links.length > 0 && (
-                <Reveal delay={0.2 + i * 0.15} className="mt-6 border-t border-line pt-4">
-                  <ul className="flex flex-wrap gap-x-6 gap-y-2">
-                    {m.links.map((link) => (
-                      <li key={link.type}>
+                <Reveal delay={0.25 + i * 0.15} className="mt-5">
+                  <ul className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    {m.links.map((link, li) => (
+                      <li key={link.type} className="flex items-center gap-3">
+                        {li > 0 && (
+                          <span aria-hidden="true" className="text-xs text-ink/20">
+                            /
+                          </span>
+                        )}
                         <a
                           href={link.href}
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={`${m.name}の${LINK_LABELS[link.type]}（新しいタブで開く）`}
-                          className="group/link label inline-flex items-center gap-1 text-mute transition-colors hover:text-ink"
+                          className="label text-mute transition-colors hover:text-ink"
                         >
                           {LINK_LABELS[link.type]}
-                          <span
-                            aria-hidden="true"
-                            className="transition-transform duration-500 ease-out-expo group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5"
-                          >
-                            ↗
-                          </span>
                         </a>
                       </li>
                     ))}

@@ -17,6 +17,8 @@ export const contact = {
   errorMessage: "送信に失敗しました。",
   errorHint: "時間をおいて、もう一度お試しください。入力内容はこのまま保持されます。",
   turnstileMessage: "送信前の確認が完了していません。少し待ってから、もう一度お試しください。",
+  // 送信後に表示するサンクスページ（/contact/thanks）
+  thanksHref: "/contact/thanks",
   successHeading: "お問い合わせありがとうございます。",
   successBody: "内容を確認のうえ、担当者よりご連絡いたします。今しばらくお待ちください。",
 };

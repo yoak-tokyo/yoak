@@ -15,7 +15,7 @@ export function MissionValue() {
         <SectionLabel inverted>{mission.label}</SectionLabel>
 
         <motion.h2
-          className="mt-14 text-[clamp(3rem,11vw,10rem)] leading-[1.1] font-medium tracking-[0.02em]"
+          className="mt-14 text-[clamp(3rem,11vw,10rem)] leading-[1.1] md:text-[clamp(2.4rem,8.8vw,8rem)] font-medium tracking-[0.02em]"
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: "0px 0px -20% 0px" }}
@@ -72,7 +72,7 @@ export function MissionValue() {
                     {v.en}
                   </p>
                   <div className="md:col-span-5">
-                    <h3 className="text-lg font-medium md:text-xl">{v.title}</h3>
+                    <h3 className="text-lg font-medium md:text-2xl">{v.title}</h3>
                     <p className="mt-3 text-[11px] leading-[2.1] text-white/70 md:text-sm">{v.body}</p>
                   </div>
                 </Reveal>

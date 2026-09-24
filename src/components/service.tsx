@@ -56,6 +56,12 @@ function Placeholder({ item }: { item: ServiceItem }) {
   );
 }
 
+// ステータスの丸：公開中は電源が入った緑、開発中は電源の落ちたグレー
+const STATUS_DOT: Record<string, string> = {
+  "now available": "bg-emerald-500",
+  "in development": "bg-ink/25",
+};
+
 export function Service() {
   return (
     <section id="service" className="bg-paper pb-32 md:pb-48">
@@ -92,7 +98,7 @@ export function Service() {
                 <Reveal className="flex items-center justify-between text-mute">
                   <span className="label">{item.no}</span>
                   <span className="label inline-flex items-center gap-2">
-                    <span className={`size-1.5 rounded-full ${item.status === "now available" ? "bg-ink" : "border border-ink/40"}`} />
+                    <span className={`size-1.5 rounded-full ${STATUS_DOT[item.status] ?? "border border-ink/40"}`} />
                     {item.status}
                   </span>
                 </Reveal>
@@ -109,7 +115,7 @@ export function Service() {
                   )}
                   <p className="mt-3 text-xs tracking-[0.1em] text-mute">{item.category}</p>
                 </Reveal>
-                <Reveal delay={0.1} className="mt-8 border-l border-ink pl-4">
+                <Reveal delay={0.1} className="mt-8 border-l border-line pl-4">
                   <p className="label text-mute">we want</p>
                   <p className="mt-2 text-lg leading-[1.8] font-medium">{item.yoku}</p>
                 </Reveal>

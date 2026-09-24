@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 import { contact } from "@/content/contact";
 import { Reveal, SectionLabel } from "./reveal";
@@ -61,7 +62,8 @@ const fieldBase =
 export function Contact() {
   const [data, setData] = useState<FormState>(initialState);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [status, setStatus] = useState<"idle" | "submitting" | "error" | "success">("idle");
+  const router = useRouter();
+  const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReset, setTurnstileReset] = useState(0);
@@ -94,7 +96,8 @@ export function Contact() {
     try {
       const result = await sendInquiry(data, { turnstileToken, website });
       if (result.ok) {
-        setStatus("success");
+        // 送信中の表示のまま、サンクスページへ移る
+        router.push(contact.thanksHref);
       } else {
         setStatus("error");
         setErrorMessage(result.message);
@@ -105,22 +108,6 @@ export function Contact() {
       setErrorMessage(contact.errorMessage);
       setTurnstileReset((n) => n + 1);
     }
-  }
-
-  if (status === "success") {
-    return (
-      <section id="contact" className="bg-paper py-32 md:py-48">
-        <div className="mx-auto max-w-[1280px] px-5 md:px-10">
-          <SectionLabel>{contact.label}</SectionLabel>
-          <Reveal as="h2" className="mt-8 text-2xl font-medium tracking-tight md:text-3xl">
-            {contact.successHeading}
-          </Reveal>
-          <Reveal as="p" delay={0.1} className="mt-4 max-w-xl text-[15px] leading-[1.9] text-mute">
-            {contact.successBody}
-          </Reveal>
-        </div>
-      </section>
-    );
   }
 
   return (

@@ -10,9 +10,9 @@ function NewsRow({ item }: { item: NewsItem }) {
   const external = item.href ? /^https?:\/\//.test(item.href) : false;
   const content = (
     <>
-      <time className="font-en text-sm tracking-[0.06em] text-mute md:col-span-2">{item.date}</time>
-      <span className="label text-mute md:col-span-1">{item.category}</span>
-      <span className="text-[15px] leading-[1.9] md:col-span-5">
+      <time className="font-en text-sm tracking-[0.06em] text-mute">{item.date}</time>
+      <span className="label text-mute">{item.category}</span>
+      <span className="text-[15px] leading-[1.9]">
         {item.title}
         {item.href && (
           <span
@@ -25,7 +25,8 @@ function NewsRow({ item }: { item: NewsItem }) {
       </span>
     </>
   );
-  const className = "grid gap-2 py-6 md:grid-cols-8 md:items-baseline md:gap-6 md:py-7";
+  // 日付とカテゴリは中身の幅に合わせた固定幅にして、タイトルとの間を詰める
+  const className = "grid gap-2 py-6 md:grid-cols-[5.5rem_5.5rem_1fr] md:items-baseline md:gap-6 md:py-7";
 
   if (!item.href) return <div className={className}>{content}</div>;
   return (

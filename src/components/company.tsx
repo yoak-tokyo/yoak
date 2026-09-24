@@ -82,7 +82,7 @@ export function Footer() {
       <div className="mx-auto max-w-[1280px]">
         <div className="grid gap-14 border-t border-line-inv pt-8 md:grid-cols-12 md:pt-10">
           <div className="md:col-span-5">
-            <p className="text-[clamp(1.5rem,2.6vw,2.25rem)] leading-[1.5] font-medium">
+            <p className="text-[clamp(1.8rem,3.12vw,2.7rem)] leading-[1.5] font-medium">
               {/* 読点のあとで改行する */}
               {mission.statement.split(/(?<=、)/).map((line) => (
                 <span key={line} className="block">

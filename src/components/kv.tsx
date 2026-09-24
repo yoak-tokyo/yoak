@@ -56,11 +56,11 @@ export function Kv() {
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/30" />
 
       <motion.div
-        className="relative flex h-full flex-col justify-end px-5 pb-10 md:px-10 md:pb-14"
+        className="relative flex h-full flex-col justify-end px-5 pb-20 md:px-10 md:pb-28"
         style={{ y: contentY, opacity: fade }}
       >
         <motion.p
-          className="label absolute top-24 right-5 text-white/60 md:top-28 md:right-10"
+          className="label absolute top-32 right-5 text-white/60 md:top-40 md:right-10"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, delay: START + 0.9 }}
@@ -81,8 +81,8 @@ export function Kv() {
           {kv.sub}
         </motion.p>
 
-        {/* SP ではキャッチを下に寄せるため、スクロール表示を右下に重ねる */}
-        <div className="absolute right-5 bottom-10 md:static md:mt-14 md:flex md:items-end md:justify-end md:gap-6">
+        {/* キャッチを下に寄せるため、スクロール表示は右下に重ねる */}
+        <div className="absolute right-5 bottom-10 md:right-10 md:bottom-14">
           <motion.a
             href="#about"
             className="group flex flex-col items-center gap-3 text-white/70"
