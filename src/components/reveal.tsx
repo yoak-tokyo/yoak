@@ -78,26 +78,16 @@ export function MaskLines({
   );
 }
 
-// セクション見出し左の英字ラベル + 伸びる罫線
+// セクション見出し左の英字ラベル
 export function SectionLabel({
   children,
-  no,
   inverted = false,
 }: {
   children: React.ReactNode;
-  no: string;
   inverted?: boolean;
 }) {
   return (
     <div className={`flex items-center gap-4 ${inverted ? "text-white/70" : "text-mute"}`}>
-      <span className="label">{no}</span>
-      <motion.span
-        className={`h-px w-12 origin-left ${inverted ? "bg-white/40" : "bg-ink/30"}`}
-        initial={{ scaleX: 0 }}
-        whileInView={{ scaleX: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 1.2, ease: EASE }}
-      />
       <span className="label">{children}</span>
     </div>
   );

@@ -61,7 +61,7 @@ export function Service() {
     <section id="service" className="bg-paper pb-32 md:pb-48">
       <div className="mx-auto max-w-[1280px] px-5 md:px-10">
         <div className="border-t border-line pt-16 md:pt-24">
-          <SectionLabel no="02">{service.label}</SectionLabel>
+          <SectionLabel>{service.label}</SectionLabel>
           <div className="mt-8 grid gap-6 md:grid-cols-12">
             <h2 className="text-[clamp(1.75rem,3.4vw,2.75rem)] leading-[1.5] font-medium md:col-span-7">
               <MaskLines lines={[service.heading]} />
@@ -92,7 +92,7 @@ export function Service() {
                 <Reveal className="flex items-center justify-between text-mute">
                   <span className="label">{item.no}</span>
                   <span className="label inline-flex items-center gap-2">
-                    <span className={`size-1.5 rounded-full ${item.status === "Now available" ? "bg-ink" : "border border-ink/40"}`} />
+                    <span className={`size-1.5 rounded-full ${item.status === "now available" ? "bg-ink" : "border border-ink/40"}`} />
                     {item.status}
                   </span>
                 </Reveal>
@@ -110,7 +110,7 @@ export function Service() {
                   <p className="mt-3 text-xs tracking-[0.1em] text-mute">{item.category}</p>
                 </Reveal>
                 <Reveal delay={0.1} className="mt-8 border-l border-ink pl-4">
-                  <p className="label text-mute">Our desire</p>
+                  <p className="label text-mute">we want</p>
                   <p className="mt-2 text-lg leading-[1.8] font-medium">{item.yoku}</p>
                 </Reveal>
                 <Reveal as="p" delay={0.15} className="mt-6 text-sm leading-[2.1] text-ink/80">

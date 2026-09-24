@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "motion/react";
-import { company } from "@/content/site";
+import Link from "next/link";
+import { company, footer, mission, type FooterLink } from "@/content/site";
 import { YoakLogo } from "./logos";
 import { Reveal, SectionLabel } from "./reveal";
 
@@ -12,7 +13,7 @@ export function Company() {
     <section id="company" className="bg-mist py-32 md:py-48">
       <div className="mx-auto grid max-w-[1280px] gap-12 px-5 md:grid-cols-12 md:px-10">
         <div className="md:col-span-4">
-          <SectionLabel no="06">{company.label}</SectionLabel>
+          <SectionLabel>{company.label}</SectionLabel>
           <Reveal as="h2" className="mt-8 font-en text-4xl font-medium tracking-tight md:text-5xl">
             Profile
           </Reveal>
@@ -52,17 +53,85 @@ export function Company() {
   );
 }
 
+function FooterNavLink({ link }: { link: FooterLink }) {
+  const className = "text-[15px] text-white/75 transition-colors hover:text-white";
+  if (link.external) {
+    return (
+      <a href={link.href} target="_blank" rel="noopener noreferrer" className={className}>
+        {link.label} <span aria-hidden="true">↗</span>
+      </a>
+    );
+  }
+  if (link.href.startsWith("/")) {
+    return (
+      <Link href={link.href} className={className}>
+        {link.label}
+      </Link>
+    );
+  }
+  return (
+    <a href={link.href} className={className}>
+      {link.label}
+    </a>
+  );
+}
+
 export function Footer() {
   return (
     <footer className="overflow-hidden bg-ink px-5 pt-20 pb-8 text-white md:px-10 md:pt-28">
       <div className="mx-auto max-w-[1280px]">
-        <Reveal y={60}>
-          <YoakLogo className="h-auto w-full max-w-[1200px]" />
-        </Reveal>
-        <div className="mt-16 flex flex-col-reverse justify-between gap-6 border-t border-line-inv pt-6 md:flex-row md:items-center">
-          <p className="font-en text-xs tracking-[0.08em] text-white/50">© {new Date().getFullYear()} Yoak, LLC.</p>
-          <a href="#top" className="label text-white/70 transition-colors hover:text-white">
-            Back to top ↑
+        <div className="grid gap-14 border-t border-line-inv pt-8 md:grid-cols-12 md:pt-10">
+          <div className="md:col-span-5">
+            <p className="text-[clamp(1.5rem,2.6vw,2.25rem)] leading-[1.5] font-medium">
+              {/* 読点のあとで改行する */}
+              {mission.statement.split(/(?<=、)/).map((line) => (
+                <span key={line} className="block">
+                  {line}
+                </span>
+              ))}
+            </p>
+            <p className="mt-4 font-en text-sm tracking-[0.08em] text-white/60 italic">{mission.en}</p>
+          </div>
+
+          <nav aria-label="フッター" className="grid grid-cols-2 gap-x-8 gap-y-12 sm:grid-cols-3 md:col-span-6 md:col-start-7">
+            {footer.columns.map((col) => (
+              <div key={col.heading}>
+                <p className="label text-white/40">{col.heading}</p>
+                <ul className="mt-6 space-y-3">
+                  {col.links.map((link) => (
+                    <li key={link.href}>
+                      <FooterNavLink link={link} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
+        </div>
+
+        <div className="mt-20 flex flex-col-reverse gap-12 md:mt-32 md:grid md:grid-cols-12 md:items-end">
+          <address className="text-sm leading-[1.9] text-white/70 not-italic md:col-span-5">
+            <span className="block text-white">{footer.companyName}</span>
+            {footer.address.map((line) => (
+              <span key={line} className="block">
+                {line}
+              </span>
+            ))}
+          </address>
+          <Reveal y={60} className="md:col-span-6 md:col-start-7">
+            <YoakLogo className="h-auto w-full" />
+          </Reveal>
+        </div>
+
+        <div className="mt-12 grid gap-4 border-t border-line-inv pt-6 md:mt-16 md:grid-cols-3 md:items-center">
+          <p className="font-en text-xs tracking-[0.08em] text-white/50 md:col-start-2 md:text-center">
+            © 2025 Yoak, LLC.
+          </p>
+          <a
+            href="#top"
+            className="label text-white/70 transition-colors hover:text-white md:col-start-3 md:justify-self-end"
+          >
+            back to top ↑
           </a>
         </div>
       </div>

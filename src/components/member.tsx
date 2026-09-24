@@ -1,21 +1,29 @@
 "use client";
 
 import { motion } from "motion/react";
-import { member } from "@/content/site";
-import { MaskLines, Reveal, SectionLabel } from "./reveal";
+import Image from "next/image";
+import { member, type MemberLink } from "@/content/site";
+import { Reveal, SectionLabel } from "./reveal";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+const LINK_LABELS: Record<MemberLink["type"], string> = {
+  x: "x",
+  note: "note",
+  instagram: "instagram",
+  portfolio: "portfolio",
+};
 
 export function Member() {
   return (
     <section id="member" className="bg-paper py-32 md:py-48">
       <div className="mx-auto max-w-[1280px] px-5 md:px-10">
-        <SectionLabel no="05">{member.label}</SectionLabel>
-        <h2 className="mt-8 text-[clamp(1.75rem,3.4vw,2.75rem)] leading-[1.5] font-medium">
-          <MaskLines lines={[member.heading]} />
-        </h2>
+        <SectionLabel>{member.label}</SectionLabel>
+        <Reveal as="h2" className="mt-8 font-en text-4xl font-medium tracking-tight md:text-5xl">
+          {member.heading}
+        </Reveal>
 
-        <ul className="mt-16 grid gap-16 md:mt-24 md:grid-cols-2 md:gap-10">
+        <ul className="mt-16 grid gap-16 md:mt-24 md:grid-cols-2 md:gap-10 lg:grid-cols-3">
           {member.items.map((m, i) => (
             <li key={m.en} className="group">
               <motion.div
@@ -25,17 +33,26 @@ export function Member() {
                 viewport={{ once: true, margin: "0px 0px -15% 0px" }}
                 transition={{ duration: 1.4, ease: EASE, delay: i * 0.15 }}
               >
-                {/* TODO: メンバー写真に差し替え */}
-                <div className="absolute inset-0 grid place-items-center transition-transform duration-[1.4s] ease-out-expo group-hover:scale-105">
-                  <span className="font-en text-[7rem] leading-none tracking-tight text-ink/10 italic">
-                    {m.en
-                      .split(" ")
-                      .map((w) => w[0])
-                      .join("")}
-                  </span>
+                <div className="absolute inset-0 transition-transform duration-[1.4s] ease-out-expo group-hover:scale-105">
+                  {m.photo ? (
+                    <Image
+                      src={m.photo}
+                      alt={m.name}
+                      fill
+                      sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <span className="grid h-full place-items-center font-en text-[7rem] leading-none tracking-tight text-ink/10 italic">
+                      {m.en
+                        .split(" ")
+                        .map((w) => w[0])
+                        .join("")}
+                    </span>
+                  )}
                 </div>
                 <div className="absolute inset-x-5 bottom-5 bg-paper/90 p-5 backdrop-blur md:inset-x-6 md:bottom-6">
-                  <p className="label text-mute">My desire</p>
+                  <p className="label text-mute">i want</p>
                   <p className="mt-2 text-[15px] leading-[1.8] font-medium">{m.yoku}</p>
                 </div>
               </motion.div>
@@ -50,6 +67,31 @@ export function Member() {
               <Reveal as="p" delay={0.15 + i * 0.15} className="mt-5 text-sm leading-[2.1] text-ink/80">
                 {m.bio}
               </Reveal>
+              {m.links.length > 0 && (
+                <Reveal delay={0.2 + i * 0.15} className="mt-6 border-t border-line pt-4">
+                  <ul className="flex flex-wrap gap-x-6 gap-y-2">
+                    {m.links.map((link) => (
+                      <li key={link.type}>
+                        <a
+                          href={link.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`${m.name}の${LINK_LABELS[link.type]}（新しいタブで開く）`}
+                          className="group/link label inline-flex items-center gap-1 text-mute transition-colors hover:text-ink"
+                        >
+                          {LINK_LABELS[link.type]}
+                          <span
+                            aria-hidden="true"
+                            className="transition-transform duration-500 ease-out-expo group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5"
+                          >
+                            ↗
+                          </span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </Reveal>
+              )}
             </li>
           ))}
         </ul>

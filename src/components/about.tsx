@@ -53,7 +53,7 @@ export function About() {
       <div className="relative mx-auto grid max-w-[1280px] gap-16 px-5 md:grid-cols-12 md:px-10">
         <div className="md:col-span-5">
           <div className="md:sticky md:top-32">
-            <SectionLabel no="01">{about.label}</SectionLabel>
+            <SectionLabel>{about.label}</SectionLabel>
             <h2 className="mt-8 text-[clamp(1.75rem,3.4vw,2.75rem)] leading-[1.5] font-medium">
               <MaskLines lines={about.heading} />
             </h2>

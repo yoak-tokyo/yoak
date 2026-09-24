@@ -10,7 +10,6 @@ import {
 } from "motion/react";
 import { useRef } from "react";
 import { kv } from "@/content/site";
-import { YoakLogo } from "./logos";
 import { OPENING_DURATION } from "./opening";
 import { MaskLines } from "./reveal";
 
@@ -73,19 +72,17 @@ export function Kv() {
           <MaskLines lines={kv.catch} animateOnMount delay={START} />
         </h1>
 
-        <div className="mt-10 flex items-end justify-between gap-6 md:mt-14">
-          <motion.div
-            className="overflow-hidden"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2, ease: EASE, delay: START + 0.5 }}
-          >
-            <YoakLogo className="h-7 w-auto md:h-9" />
-            <p className="mt-4 font-en text-sm tracking-[0.08em] text-white/70 italic">
-              {kv.sub}
-            </p>
-          </motion.div>
+        <motion.p
+          className="mt-6 overflow-hidden font-en text-sm tracking-[0.08em] text-white/70 italic md:mt-8"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.2, ease: EASE, delay: START + 0.5 }}
+        >
+          {kv.sub}
+        </motion.p>
 
+        {/* SP ではキャッチを下に寄せるため、スクロール表示を右下に重ねる */}
+        <div className="absolute right-5 bottom-10 md:static md:mt-14 md:flex md:items-end md:justify-end md:gap-6">
           <motion.a
             href="#about"
             className="group flex flex-col items-center gap-3 text-white/70"
@@ -93,7 +90,7 @@ export function Kv() {
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: START + 1 }}
           >
-            <span className="label [writing-mode:vertical-rl]">Scroll</span>
+            <span className="label [writing-mode:vertical-rl]">scroll</span>
             <span className="relative block h-16 w-px overflow-hidden bg-white/20">
               <motion.span
                 className="absolute inset-x-0 top-0 h-1/2 bg-white"

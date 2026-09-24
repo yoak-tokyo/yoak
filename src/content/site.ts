@@ -4,12 +4,12 @@
 
 export const kv = {
   catch: ["欲から、", "はじめる。"],
-  sub: "Start with desire. Stay curious.",
+  sub: "Start want. Stay curious.",
   reading: "Yoak — 欲（yoku）",
 };
 
 export const about = {
-  label: "About",
+  label: "about",
   heading: ["「欲」は、", "いちばん正直な", "原動力だ。"],
   body: [
     ["社名の Yoak は、「欲（よく）」から来ています。"],
@@ -48,7 +48,7 @@ export type ServiceItem = {
 };
 
 export const service = {
-  label: "Service",
+  label: "service",
   heading: "欲から生まれた、事業たち。",
   lead: "メンバーそれぞれの「欲しい」と「やってみたい」から、ひとつずつ事業が生まれていきます。",
   items: [
@@ -60,7 +60,7 @@ export const service = {
       yoku: "夜にも、おいしいコーヒーが飲みたい。",
       description:
         "時間帯や体調に関わらずスペシャルティコーヒーを楽しめるよう、浅煎りの豊かな風味にこだわって豆を選び、焙煎しています。夜でも、妊娠中でも、カフェインが気になる日でも。",
-      status: "Now available",
+      status: "now available",
       image: "/images/nb-moon.jpg",
       link: { label: "Online store", href: "https://nightbrew.jp/" },
     },
@@ -71,7 +71,7 @@ export const service = {
       yoku: "どこにいても、信頼できる一杯に出会いたい。",
       description:
         "家の近くでも、旅先でも、「ここに行けばおいしいスペシャルティコーヒーが飲める」と信頼できるマップ。自分が飲んだ一杯の記録が、そのマップを育てていきます。",
-      status: "In development",
+      status: "in development",
     },
     {
       no: "03",
@@ -80,20 +80,20 @@ export const service = {
       yoku: "メンバーの、次の欲から。",
       description:
         "Yoak では、メンバーが本気で「欲しい」と思えるものを事業にしていきます。次は何が生まれるか、私たち自身も楽しみにしています。",
-      status: "Coming someday",
+      status: "coming someday",
     },
   ] satisfies ServiceItem[],
 };
 
 export const mission = {
-  label: "Mission",
+  label: "mission",
   statement: "欲を、かたちに。",
   en: "Want it. Make it.",
   body: "自分たちが心から欲しいものを、事業としてかたちにし、世に出しつづける。",
 };
 
 export const values = {
-  label: "Value",
+  label: "value",
   items: [
     {
       no: "01",
@@ -116,31 +116,105 @@ export const values = {
   ],
 };
 
+export type MemberLink = {
+  type: "x" | "note" | "instagram" | "portfolio";
+  href: string;
+};
+
+export type MemberItem = {
+  name: string;
+  en: string;
+  role: string;
+  photo?: string;
+  yoku: string;
+  bio: string;
+  links: MemberLink[];
+};
+
 export const member = {
-  label: "Member",
-  heading: "欲に正直な、メンバーたち。",
+  label: "member",
+  heading: "Yoak member",
   items: [
     {
       name: "弘松 陸",
       en: "Riku Hiromatsu",
-      role: "代表社員",
-      // TODO: プロフィール・いまの欲を記入
-      yoku: "（いまの欲を記入）",
-      bio: "（プロフィールを記入）",
+      role: "co-founder",
+      photo: "/images/member/hiromatsu.jpg",
+      yoku: "最高のチームで、大きなことをしたい。",
+      bio: "1998年、福岡県生まれ。福岡のデザインファーム gaz で Web サイトのディレクションとデザインを手がけ、新規事業「STUDIO gather」を立ち上げる。令和トラベルでは旅行アプリ NEWT のコミュニケーションデザインを担当。2026年に独立し、Yoak では night brew のマーケティングと事業開発、コーヒーノミタイの開発をリードしている。",
+      links: [
+        { type: "x", href: "https://x.com/rikuhiromatsu_" },
+        { type: "note", href: "https://note.com/rikuhiromatsu" },
+        { type: "instagram", href: "https://www.instagram.com/rikuhiromatsu_" },
+        // TODO: ポートフォリオサイトの URL を記入
+        { type: "portfolio", href: "https://example.com/" },
+      ],
     },
     {
       name: "三井 聡一郎",
       en: "Soichiro Mitsui",
-      role: "代表社員",
-      // TODO: プロフィール・いまの欲を記入
+      role: "co-founder",
+      photo: "/images/member/mitsui.jpg",
+      // TODO: プロフィール・いまの欲・各リンクの URL を記入
       yoku: "（いまの欲を記入）",
       bio: "（プロフィールを記入）",
+      links: [
+        { type: "x", href: "https://x.com/" },
+        { type: "note", href: "https://note.com/" },
+      ],
     },
-  ],
+    {
+      name: "佐野木 雄大",
+      en: "Takehiro Sanoki",
+      role: "member",
+      photo: "/images/member/sanoki.jpg",
+      // TODO: プロフィール・いまの欲・各リンクの URL を記入
+      yoku: "（いまの欲を記入）",
+      bio: "（プロフィールを記入）",
+      links: [{ type: "x", href: "https://x.com/" }],
+    },
+  ] satisfies MemberItem[],
+};
+
+
+export type NewsItem = {
+  date: string;
+  category: string;
+  title: string;
+  href?: string;
+};
+
+// 新しいお知らせは先頭に足していく
+export const news = {
+  label: "news",
+  heading: "What’s new",
+  items: [
+    {
+      date: "2026.10.01",
+      category: "company",
+      title: "コーポレートサイトをリニューアルしました。",
+    },
+    {
+      date: "2026.08.08",
+      category: "event",
+      title: "night brew のポップアップイベント「SLOW NIGHT WKND」を開催しました。",
+    },
+    {
+      date: "2026.04.05",
+      category: "service",
+      title: "カフェインレスコーヒーブランド「night brew」をローンチしました。",
+      href: "https://nightbrew.jp/",
+    },
+    {
+      date: "2025.11.11",
+      category: "company",
+      title: "Yoak合同会社を設立しました。",
+    },
+  ] satisfies NewsItem[],
 };
 
 export const company = {
-  label: "Company",
+  label: "company",
   rows: [
     { th: "社名", td: ["Yoak合同会社（Yoak, LLC.）"] },
     { th: "創業日", td: ["2025年11月11日"] },
@@ -162,9 +236,35 @@ export const company = {
 };
 
 export const nav = [
-  { label: "About", href: "#about" },
-  { label: "Service", href: "#service" },
-  { label: "Mission", href: "#mission" },
-  { label: "Member", href: "#member" },
-  { label: "Company", href: "#company" },
+  { label: "about", href: "#about" },
+  { label: "service", href: "#service" },
+  { label: "mission", href: "#mission" },
+  { label: "member", href: "#member" },
+  { label: "news", href: "#news" },
+  { label: "company", href: "#company" },
+  { label: "contact", href: "#contact" },
 ];
+
+export type FooterLink = { label: string; href: string; external?: boolean };
+
+export const footer = {
+  columns: [
+    {
+      heading: "explore",
+      links: nav.filter((item) => item.href !== "#contact"),
+    },
+    {
+      heading: "service",
+      links: [{ label: "night brew", href: "https://nightbrew.jp/", external: true }],
+    },
+    {
+      heading: "connect",
+      links: [
+        { label: "contact", href: "#contact" },
+        { label: "privacy policy", href: "/privacy" },
+      ],
+    },
+  ] satisfies { heading: string; links: FooterLink[] }[],
+  companyName: "Yoak合同会社",
+  address: company.rows.find((row) => row.th === "本店所在地")?.td ?? [],
+};

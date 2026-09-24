@@ -48,7 +48,7 @@ export function Header() {
             aria-controls="mobile-menu"
             onClick={() => setOpen((v) => !v)}
           >
-            {open ? "Close" : "Menu"}
+            {open ? "close" : "menu"}
           </button>
         </div>
       </motion.header>
@@ -57,13 +57,24 @@ export function Header() {
         {open && (
           <motion.div
             id="mobile-menu"
-            className="fixed inset-0 z-30 flex flex-col justify-end bg-ink px-5 pb-16 text-white md:hidden"
+            className="fixed inset-0 z-30 flex flex-col overflow-x-hidden overflow-y-auto bg-ink px-5 pt-24 pb-16 text-white md:hidden"
             initial={{ clipPath: "inset(0 0 100% 0)" }}
             animate={{ clipPath: "inset(0 0 0% 0)" }}
             exit={{ clipPath: "inset(0 0 100% 0)" }}
             transition={{ duration: 0.7, ease: EASE }}
           >
-            <ul className="space-y-3">
+            {/* About セクションと同じ、輪郭だけの「欲」 */}
+            <motion.span
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-[18vw] top-[8vh] select-none text-[88vw] leading-none font-bold text-transparent"
+              style={{ WebkitTextStroke: "0.5px rgb(255 255 255 / 0.14)" }}
+              initial={{ opacity: 0, scale: 1.04, rotate: -3, filter: "blur(8px)" }}
+              animate={{ opacity: 0.3, scale: 1, rotate: -3, filter: "blur(0px)" }}
+              transition={{ duration: 2.4, ease: [0.22, 1, 0.36, 1], delay: 0.45 }}
+            >
+              欲
+            </motion.span>
+            <ul className="relative mt-auto space-y-3">
               {nav.map((item, i) => (
                 <li key={item.href} className="overflow-hidden">
                   <motion.a
