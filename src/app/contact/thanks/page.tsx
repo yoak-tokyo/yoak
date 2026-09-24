@@ -20,8 +20,17 @@ export default function ContactThanksPage() {
           </h1>
           <p className="mt-6 text-[15px] leading-[2.1] text-ink/80">{contact.successBody}</p>
 
-          <div className="mt-16 border-t border-line pt-8">
-            <Link href="/" className="label text-mute transition-colors hover:text-ink">
+          <div className="mt-12">
+            <Link
+              href="/"
+              className="group label inline-flex items-center gap-2 text-mute transition-colors hover:text-ink"
+            >
+              <span
+                aria-hidden="true"
+                className="transition-transform duration-500 ease-out-expo group-hover:-translate-x-1"
+              >
+                ←
+              </span>
               back to home
             </Link>
           </div>

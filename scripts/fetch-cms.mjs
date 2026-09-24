@@ -242,12 +242,15 @@ async function fetchNews() {
     }
     const slug = rawSlug && /^[a-z0-9-]+$/.test(rawSlug) ? rawSlug : id;
 
-    const html = external ? "" : await blocksToHtml(await listChildren(page.id), `news-${id.slice(-8)}`);
+    // すべての記事にサイト内のページを持たせる。外部リンクは一覧から直接飛ばさず、記事ページの中に置く
+    const html = await blocksToHtml(await listChildren(page.id), `news-${id.slice(-8)}`);
     items.push({
       date: formatDate(prop(page, "公開日")),
       category: prop(page, "カテゴリ") ?? "",
       title,
-      ...(external ? { href: external } : html ? { href: `/news/${slug}`, slug, html } : {}),
+      slug,
+      html,
+      ...(external ? { link: external } : {}),
     });
   }
   return items;

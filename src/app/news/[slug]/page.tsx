@@ -2,31 +2,38 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SubpageFooter, SubpageHeader } from "@/components/subpage-header";
-import { getNewsWithBody } from "@/lib/cms";
+import { findNews, getNews } from "@/lib/cms";
 
-// 静的書き出しのため、ビルド時に存在する記事だけを生成する
+// 静的書き出しのため、ビルド時に存在する記事だけを生成する（全記事がページを持つ）
 export const dynamicParams = false;
 
-export function generateStaticParams() {
-  const items = getNewsWithBody();
-  // 本文つきの記事が1件もないと静的書き出しがエラーになるため、ダミーを1件返す（中身は 404）
-  return items.length > 0 ? items.map((item) => ({ slug: item.slug })) : [{ slug: "_" }];
+// 関連リンクの表示名（ドメイン名）。URL として読めなければそのまま出す
+function linkLabel(link: string) {
+  try {
+    return new URL(link).hostname.replace(/^www\./, "");
+  } catch {
+    return link;
+  }
 }
 
-const findItem = (slug: string) => getNewsWithBody().find((item) => item.slug === slug);
+export function generateStaticParams() {
+  const items = getNews();
+  // 記事が1件もないと静的書き出しがエラーになるため、ダミーを1件返す（中身は 404）
+  return items.length > 0 ? items.map((item) => ({ slug: item.slug })) : [{ slug: "_" }];
+}
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const item = findItem((await params).slug);
+  const item = findNews((await params).slug);
   if (!item) return {};
   return { title: `${item.title} | Yoak, LLC.` };
 }
 
 export default async function NewsDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const item = findItem((await params).slug);
+  const item = findNews((await params).slug);
   if (!item) notFound();
 
   return (
@@ -44,10 +51,38 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
           </h1>
 
           {/* 本文は Notion からビルド時に生成した HTML（scripts/fetch-cms.mjs でエスケープ済み） */}
-          <div className="cms-body mt-14" dangerouslySetInnerHTML={{ __html: item.html }} />
+          {item.html && <div className="cms-body mt-14" dangerouslySetInnerHTML={{ __html: item.html }} />}
 
-          <div className="mt-20 border-t border-line pt-8">
-            <Link href="/#news" className="label text-mute transition-colors hover:text-ink">
+          {item.link && (
+            <p className="mt-12">
+              <a
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group label inline-flex items-center gap-2 border-b border-ink pb-1 text-ink transition-opacity hover:opacity-60"
+              >
+                {linkLabel(item.link)}
+                <span
+                  aria-hidden="true"
+                  className="transition-transform duration-500 ease-out-expo group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                >
+                  ↗
+                </span>
+              </a>
+            </p>
+          )}
+
+          <div className="mt-16">
+            <Link
+              href="/#news"
+              className="group label inline-flex items-center gap-2 text-mute transition-colors hover:text-ink"
+            >
+              <span
+                aria-hidden="true"
+                className="transition-transform duration-500 ease-out-expo group-hover:-translate-x-1"
+              >
+                ←
+              </span>
               back to news
             </Link>
           </div>

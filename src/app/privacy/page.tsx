@@ -46,8 +46,17 @@ export default function PrivacyPage() {
             ))}
           </div>
 
-          <div className="mt-20 border-t border-line pt-8">
-            <Link href="/" className="label text-mute transition-colors hover:text-ink">
+          <div className="mt-16">
+            <Link
+              href="/"
+              className="group label inline-flex items-center gap-2 text-mute transition-colors hover:text-ink"
+            >
+              <span
+                aria-hidden="true"
+                className="transition-transform duration-500 ease-out-expo group-hover:-translate-x-1"
+              >
+                ←
+              </span>
               back to home
             </Link>
           </div>

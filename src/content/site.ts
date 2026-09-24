@@ -181,7 +181,10 @@ export type NewsItem = {
   date: string;
   category: string;
   title: string;
-  href?: string;
+  // 記事ページの URL（/news/{slug}）
+  slug: string;
+  // 記事ページの中に置く関連リンク（外部サイトなど）
+  link?: string;
 };
 
 // 新しいお知らせは先頭に足していく
@@ -193,22 +196,26 @@ export const news = {
       date: "2026.10.01",
       category: "company",
       title: "コーポレートサイトをリニューアルしました。",
+      slug: "site-renewal",
     },
     {
       date: "2026.08.08",
       category: "event",
       title: "night brew のポップアップイベント「SLOW NIGHT WKND」を開催しました。",
+      slug: "slow-night-wknd",
     },
     {
       date: "2026.04.05",
       category: "service",
       title: "カフェインレスコーヒーブランド「night brew」をローンチしました。",
-      href: "https://nightbrew.jp/",
+      slug: "night-brew-launch",
+      link: "https://nightbrew.jp/",
     },
     {
       date: "2025.11.11",
       category: "company",
       title: "Yoak合同会社を設立しました。",
+      slug: "founded",
     },
   ] satisfies NewsItem[],
 };

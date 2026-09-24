@@ -296,7 +296,7 @@ export function Contact() {
                 <button
                   type="submit"
                   disabled={status === "submitting"}
-                  className="label border-b border-ink pb-1 transition-opacity hover:opacity-60 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="min-w-40 border border-ink px-10 py-4 text-xs tracking-[0.12em] transition-colors duration-300 hover:bg-ink hover:text-paper focus-visible:bg-ink focus-visible:text-paper disabled:pointer-events-none disabled:opacity-40"
                 >
                   {status === "submitting" ? contact.submittingLabel : contact.submitLabel}
                 </button>

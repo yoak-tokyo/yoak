@@ -1,41 +1,35 @@
 "use client";
 
 import { motion } from "motion/react";
+import Link from "next/link";
 import { news, type NewsItem } from "@/content/site";
 import { Reveal, SectionLabel } from "./reveal";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 function NewsRow({ item }: { item: NewsItem }) {
-  const external = item.href ? /^https?:\/\//.test(item.href) : false;
   const content = (
     <>
       <time className="font-en text-sm tracking-[0.06em] text-mute">{item.date}</time>
       <span className="label text-mute">{item.category}</span>
       <span className="text-[15px] leading-[1.9]">
         {item.title}
-        {item.href && (
-          <span
-            aria-hidden="true"
-            className="ml-2 inline-block text-mute transition-transform duration-500 ease-out-expo group-hover:translate-x-1 group-hover:-translate-y-0.5"
-          >
-            {external ? "↗" : "→"}
-          </span>
-        )}
+        <span
+          aria-hidden="true"
+          className="ml-2 inline-block text-mute transition-transform duration-500 ease-out-expo group-hover:translate-x-1"
+        >
+          →
+        </span>
       </span>
     </>
   );
   // 日付とカテゴリは中身の幅に合わせた固定幅にして、タイトルとの間を詰める
   const className = "grid gap-2 py-6 md:grid-cols-[5.5rem_5.5rem_1fr] md:items-baseline md:gap-6 md:py-7";
 
-  if (!item.href) return <div className={className}>{content}</div>;
+  // すべての記事がサイト内のページを持つ。
   // ホバー：淡い面が下からせり上がり、中身が少し右へ寄り、下辺に線が引かれる
   return (
-    <a
-      href={item.href}
-      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className="group relative block"
-    >
+    <Link href={`/news/${item.slug}`} className="group relative block">
       <span
         aria-hidden="true"
         className="absolute inset-0 origin-bottom scale-y-0 bg-mist transition-transform duration-700 ease-out-expo group-hover:scale-y-100 group-focus-visible:scale-y-100"
@@ -49,7 +43,7 @@ function NewsRow({ item }: { item: NewsItem }) {
       >
         {content}
       </span>
-    </a>
+    </Link>
   );
 }
 
@@ -67,7 +61,7 @@ export function News({ items }: { items: NewsItem[] }) {
         <ul className="md:col-span-8">
           {items.map((item, i) => (
             <motion.li
-              key={`${item.date}-${item.title}`}
+              key={item.slug}
               className="relative"
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}

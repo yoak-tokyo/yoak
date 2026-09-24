@@ -7,7 +7,7 @@ import path from "node:path";
 import { member, news, type MemberItem, type NewsItem } from "@/content/site";
 
 export type NewsEntry = NewsItem & {
-  slug?: string;
+  // 本文（Notion からビルド時に生成した HTML）。仮データや本文のない記事では空
   html?: string;
 };
 
@@ -30,8 +30,4 @@ function load(): CmsData {
 export const getNews = () => load().news;
 export const getMembers = () => load().members;
 
-// 詳細ページを持つ News（本文があり、外部リンクでないもの）
-export const getNewsWithBody = () =>
-  getNews().filter((item): item is NewsEntry & { slug: string; html: string } =>
-    Boolean(item.slug && item.html),
-  );
+export const findNews = (slug: string) => getNews().find((item) => item.slug === slug);

@@ -12,7 +12,7 @@ export const contact = {
     "その他",
   ],
   privacyHref: "/privacy",
-  submitLabel: "send",
+  submitLabel: "送信する",
   submittingLabel: "送信中…",
   errorMessage: "送信に失敗しました。",
   errorHint: "時間をおいて、もう一度お試しください。入力内容はこのまま保持されます。",
