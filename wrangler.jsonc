@@ -4,7 +4,9 @@
   "main": "worker/index.ts",
   "compatibility_date": "2026-09-24",
   "vars": {
-    "BASIC_AUTH_USER": "yoak"
+    "BASIC_AUTH_USER": "yoak",
+    // Notion の Contact DB（データソース）の ID。お問い合わせの保存先
+    "NOTION_CONTACT_DATA_SOURCE_ID": "47ea414a-7a31-454c-9599-300e94cf1c06"
   },
   "assets": {
     "directory": "./out",

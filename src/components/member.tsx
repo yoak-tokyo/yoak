@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import Image from "next/image";
-import { member, type MemberLink } from "@/content/site";
+import { member, type MemberItem, type MemberLink } from "@/content/site";
 import { Reveal, SectionLabel } from "./reveal";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -14,7 +14,7 @@ const LINK_LABELS: Record<MemberLink["type"], string> = {
   portfolio: "portfolio",
 };
 
-export function Member() {
+export function Member({ items }: { items: MemberItem[] }) {
   return (
     <section id="member" className="bg-paper py-32 md:py-48">
       <div className="mx-auto max-w-[1280px] px-5 md:px-10">
@@ -24,7 +24,7 @@ export function Member() {
         </Reveal>
 
         <ul className="mt-16 grid gap-16 md:mt-24 md:grid-cols-2 md:gap-10 lg:grid-cols-3">
-          {member.items.map((m, i) => (
+          {items.map((m, i) => (
             <li key={m.en} className="group">
               <motion.div
                 className="relative aspect-[4/5] overflow-hidden bg-mist"

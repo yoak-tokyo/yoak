@@ -7,6 +7,7 @@ import { Reveal, SectionLabel } from "./reveal";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 function NewsRow({ item }: { item: NewsItem }) {
+  const external = item.href ? /^https?:\/\//.test(item.href) : false;
   const content = (
     <>
       <time className="font-en text-sm tracking-[0.06em] text-mute md:col-span-2">{item.date}</time>
@@ -18,7 +19,7 @@ function NewsRow({ item }: { item: NewsItem }) {
             aria-hidden="true"
             className="ml-2 inline-block text-mute transition-transform duration-500 ease-out-expo group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
           >
-            ↗
+            {external ? "↗" : "→"}
           </span>
         )}
       </span>
@@ -30,8 +31,7 @@ function NewsRow({ item }: { item: NewsItem }) {
   return (
     <a
       href={item.href}
-      target="_blank"
-      rel="noopener noreferrer"
+      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
       className={`group ${className} transition-opacity hover:opacity-60`}
     >
       {content}
@@ -39,7 +39,7 @@ function NewsRow({ item }: { item: NewsItem }) {
   );
 }
 
-export function News() {
+export function News({ items }: { items: NewsItem[] }) {
   return (
     <section id="news" className="bg-paper pb-32 md:pb-48">
       <div className="mx-auto grid max-w-[1280px] gap-12 px-5 md:grid-cols-12 md:px-10">
@@ -51,7 +51,7 @@ export function News() {
         </div>
 
         <ul className="md:col-span-8">
-          {news.items.map((item, i) => (
+          {items.map((item, i) => (
             <motion.li
               key={`${item.date}-${item.title}`}
               className="relative"

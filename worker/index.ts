@@ -2,8 +2,11 @@
 // ユーザー名は BASIC_AUTH_USER（wrangler.jsonc の vars）、
 // パスワードは `wrangler secret put BASIC_AUTH_PASSWORD` で設定する。
 // シークレットを削除すれば認証なしで公開される。
+// /api/contact はお問い合わせの受付（worker/contact.ts）。
 
-interface Env {
+import { handleContact, type ContactEnv } from "./contact";
+
+interface Env extends ContactEnv {
   ASSETS: { fetch(request: Request): Promise<Response> };
   BASIC_AUTH_USER?: string;
   BASIC_AUTH_PASSWORD?: string;
@@ -32,7 +35,7 @@ function isAuthorized(request: Request, user: string, password: string) {
 }
 
 const worker = {
-  async fetch(request: Request, env: Env) {
+  async fetch(request: Request, env: Env, ctx: { waitUntil(promise: Promise<unknown>): void }) {
     const password = env.BASIC_AUTH_PASSWORD;
     if (password && !isAuthorized(request, env.BASIC_AUTH_USER ?? "", password)) {
       return new Response("Authentication required", {
@@ -40,6 +43,7 @@ const worker = {
         headers: { "WWW-Authenticate": 'Basic realm="Yoak preview", charset="UTF-8"' },
       });
     }
+    if (new URL(request.url).pathname === "/api/contact") return handleContact(request, env, ctx);
     return env.ASSETS.fetch(request);
   },
 };
