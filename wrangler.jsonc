@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "yoak-corporate-site",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-24",
+  "vars": {
+    "BASIC_AUTH_USER": "yoak"
+  },
+  "assets": {
+    "directory": "./out",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    // すべてのリクエストを Worker（Basic 認証）に通す
+    "run_worker_first": true
+  }
+}
