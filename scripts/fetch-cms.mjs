@@ -8,6 +8,7 @@ import { Client } from "@notionhq/client";
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 
 const NEWS_DATA_SOURCE_ID = "c0009285-c3b5-462b-9da4-1c9d87bfe03e";
 const MEMBER_DATA_SOURCE_ID = "c77258d3-67c3-4ce1-8cdd-a4c00cddf9bd";
@@ -16,6 +17,8 @@ const OUT_DIR = ".cms";
 const OUT_FILE = path.join(OUT_DIR, "cms.json");
 const IMAGE_DIR = path.join("public", "cms");
 const IMAGE_URL_BASE = "/cms";
+// 画像はこの幅に収めて WebP に変換する（スマホで重くならないように）
+const IMAGE_MAX_WIDTH = 1600;
 
 const required = process.env.CMS_REQUIRED === "1";
 const token = process.env.NOTION_TOKEN;
@@ -93,8 +96,20 @@ async function download(url, baseName) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`画像の取得に失敗しました (${res.status}): ${baseName}`);
   const type = (res.headers.get("content-type") ?? "").split(";")[0].trim();
-  const ext = EXT_BY_TYPE[type] ?? (path.extname(new URL(url).pathname) || ".jpg");
-  const buf = Buffer.from(await res.arrayBuffer());
+  const original = Buffer.from(await res.arrayBuffer());
+
+  // GIF はアニメーションを壊さないようそのまま。それ以外は縮小して WebP にする
+  let buf = original;
+  let ext = EXT_BY_TYPE[type] ?? (path.extname(new URL(url).pathname) || ".jpg");
+  if (type !== "image/gif") {
+    buf = await sharp(original)
+      .rotate() // スマホ写真の EXIF の向きを反映
+      .resize({ width: IMAGE_MAX_WIDTH, withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+    ext = ".webp";
+  }
+
   // 内容のハッシュをファイル名に含め、差し替え時にキャッシュが残らないようにする
   const hash = createHash("sha1").update(buf).digest("hex").slice(0, 8);
   const fileName = `${baseName}-${hash}${ext}`;
@@ -193,7 +208,7 @@ async function blocksToHtml(blocks, imagePrefix) {
         out.push(`<pre><code>${escapeHtml(plain(data.rich_text))}</code></pre>`);
         break;
       case "image": {
-        const src = await download(fileUrl(data), `${imagePrefix}-${block.id.slice(0, 8)}`);
+        const src = await download(fileUrl(data), `${imagePrefix}-${block.id.replace(/-/g, "").slice(-8)}`);
         const caption = richTextToHtml(data.caption);
         const alt = escapeHtml(plain(data.caption));
         out.push(
@@ -227,7 +242,7 @@ async function fetchNews() {
     }
     const slug = rawSlug && /^[a-z0-9-]+$/.test(rawSlug) ? rawSlug : id;
 
-    const html = external ? "" : await blocksToHtml(await listChildren(page.id), `news-${id.slice(0, 8)}`);
+    const html = external ? "" : await blocksToHtml(await listChildren(page.id), `news-${id.slice(-8)}`);
     items.push({
       date: formatDate(prop(page, "公開日")),
       category: prop(page, "カテゴリ") ?? "",
@@ -253,7 +268,7 @@ async function fetchMembers() {
     if (!name) continue;
     const files = prop(page, "写真") ?? [];
     const photo = files[0]
-      ? await download(fileUrl(files[0]), `member-${page.id.replace(/-/g, "").slice(0, 8)}`)
+      ? await download(fileUrl(files[0]), `member-${page.id.replace(/-/g, "").slice(-8)}`)
       : undefined;
     items.push({
       name,
