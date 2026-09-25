@@ -16,6 +16,15 @@ const VISIBLE = FILL_DELAY + FILL_DURATION + HOLD;
 // KV はこの時刻を基準に登場する（幕が上がり始めて少し後）
 export const OPENING_DURATION = VISIBLE + 0.7;
 
+// オープニングを見終えたか。モード切り替えで KV を描き直すときは、オープニングを待たずに登場させる
+let openingDone = false;
+
+// KV の登場を始める時刻（秒）。初回はオープニングのあと、2 回目以降はすぐ
+export function useIntroStart() {
+  const [start] = useState(() => (openingDone ? 0.3 : OPENING_DURATION - 0.5));
+  return start;
+}
+
 // 薄く置いたロゴが下から白く満ちていき、満ちきったら幕が上がるオープニング
 export function Opening() {
   const [visible, setVisible] = useState(true);
@@ -23,6 +32,7 @@ export function Opening() {
   useEffect(() => {
     document.documentElement.style.overflow = "hidden";
     const t = setTimeout(() => {
+      openingDone = true;
       setVisible(false);
       document.documentElement.style.overflow = "";
     }, VISIBLE * 1000);

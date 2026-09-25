@@ -59,7 +59,12 @@ function validate(data: FormState): FieldErrors {
 const fieldBase =
   "peer w-full border-b border-line bg-transparent py-3 text-[15px] outline-none transition-colors placeholder:text-mute/60 focus:border-ink";
 
-export function Contact() {
+export function Contact({
+  sectionClassName = "bg-paper py-32 md:py-48",
+}: {
+  // 外枠（背景・余白）。大欲モードではカードの中に置くため差し替える
+  sectionClassName?: string;
+} = {}) {
   const [data, setData] = useState<FormState>(initialState);
   const [errors, setErrors] = useState<FieldErrors>({});
   const router = useRouter();
@@ -111,7 +116,7 @@ export function Contact() {
   }
 
   return (
-    <section id="contact" className="bg-paper py-32 md:py-48">
+    <section id="contact" className={sectionClassName}>
       <div className="mx-auto grid max-w-[1280px] gap-12 px-5 md:grid-cols-12 md:px-10">
         <div className="md:col-span-4">
           <SectionLabel>{contact.label}</SectionLabel>

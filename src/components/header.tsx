@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/
 import { useState } from "react";
 import { nav } from "@/content/site";
 import { YoakLogo } from "./logos";
+import { ModeToggle } from "./mode";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -29,27 +30,30 @@ export function Header() {
           <a href="#top" aria-label="Yoak トップへ" className="block">
             <YoakLogo className="h-[18px] w-auto md:h-5" />
           </a>
-          <nav className="hidden md:block" aria-label="メイン">
-            <ul className="flex gap-9">
-              {nav.map((item) => (
-                <li key={item.href}>
-                  <a href={item.href} className="group label relative block py-1">
-                    {item.label}
-                    <span className="absolute inset-x-0 -bottom-0.5 h-px origin-right scale-x-0 bg-current transition-transform duration-500 ease-out-expo group-hover:origin-left group-hover:scale-x-100" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <button
-            type="button"
-            className="label relative z-50 md:hidden"
-            aria-expanded={open}
-            aria-controls="mobile-menu"
-            onClick={() => setOpen((v) => !v)}
-          >
-            {open ? "close" : "menu"}
-          </button>
+          <div className="flex items-center gap-4 md:gap-9">
+            <nav className="hidden md:block" aria-label="メイン">
+              <ul className="flex gap-9">
+                {nav.map((item) => (
+                  <li key={item.href}>
+                    <a href={item.href} className="group label relative block py-1">
+                      {item.label}
+                      <span className="absolute inset-x-0 -bottom-0.5 h-px origin-right scale-x-0 bg-current transition-transform duration-500 ease-out-expo group-hover:origin-left group-hover:scale-x-100" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+            <ModeToggle tone="yoak" className="relative z-50" />
+            <button
+              type="button"
+              className="label relative z-50 md:hidden"
+              aria-expanded={open}
+              aria-controls="mobile-menu"
+              onClick={() => setOpen((v) => !v)}
+            >
+              {open ? "close" : "menu"}
+            </button>
+          </div>
         </div>
       </motion.header>
 

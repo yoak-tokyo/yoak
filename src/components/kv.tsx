@@ -10,13 +10,13 @@ import {
 } from "motion/react";
 import { useRef } from "react";
 import { kv } from "@/content/site";
-import { OPENING_DURATION } from "./opening";
+import { useIntroStart } from "./opening";
 import { MaskLines } from "./reveal";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-const START = OPENING_DURATION - 0.5;
 
 export function Kv() {
+  const START = useIntroStart();
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const imageY = useTransform(scrollYProgress, [0, 1], ["0%", "18%"]);

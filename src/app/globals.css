@@ -153,3 +153,120 @@ body {
   font-size: 12px;
   color: var(--color-mute);
 }
+
+/* ============================================================
+   スーパー大欲モード
+   ============================================================ */
+
+@theme {
+  --color-cream: #f3efe4;
+  --color-acid: #d2ff1f;
+  --color-hot: #ff3d9a;
+  --color-volt: #2f43ff;
+  --color-tang: #ff6a14;
+  --color-grape: #a47bff;
+
+  --font-display: var(--font-dela), var(--font-noto-sans-jp), sans-serif;
+}
+
+html[data-mode="daiyoku"],
+html[data-mode="daiyoku"] body {
+  background: var(--color-cream);
+}
+html[data-mode="daiyoku"] ::selection {
+  background: var(--color-hot);
+  color: var(--color-ink);
+}
+
+/* 流れ続ける帯 */
+.dy-marquee {
+  animation: dy-marquee var(--dy-dur, 40s) linear infinite;
+}
+@keyframes dy-marquee {
+  to { transform: translateX(-50%); }
+}
+
+.dy-spin {
+  animation: dy-spin var(--dy-dur, 18s) linear infinite;
+}
+@keyframes dy-spin {
+  to { transform: rotate(360deg); }
+}
+
+.dy-float {
+  animation: dy-float var(--dy-dur, 6s) ease-in-out infinite alternate;
+}
+@keyframes dy-float {
+  from { transform: translateY(-6%) rotate(-4deg); }
+  to { transform: translateY(6%) rotate(5deg); }
+}
+
+/* 色が順番に移り変わる（filter より軽い color のアニメーション） */
+.dy-cycle {
+  animation: dy-cycle 8s linear infinite;
+}
+@keyframes dy-cycle {
+  0%, 100% { color: var(--color-hot); }
+  25% { color: var(--color-acid); }
+  50% { color: var(--color-volt); }
+  75% { color: var(--color-tang); }
+}
+
+/* うねる多色グラデーションを文字に流し込む */
+.dy-mesh-text {
+  background-image: linear-gradient(
+    115deg,
+    var(--color-hot),
+    var(--color-tang) 22%,
+    var(--color-acid) 42%,
+    var(--color-volt) 64%,
+    var(--color-grape) 82%,
+    var(--color-hot)
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: dy-mesh 9s ease-in-out infinite alternate;
+}
+@keyframes dy-mesh {
+  from { background-position: 0% 30%; }
+  to { background-position: 100% 70%; }
+}
+
+/* 輪郭だけの文字（塗りだけ透明にして、線は文字色で引く） */
+.dy-outline {
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: var(--dy-stroke, 2px) currentColor;
+}
+.dy-outline-cream {
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: var(--dy-stroke, 2px) var(--color-cream);
+}
+.dy-outline-acid {
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: var(--dy-stroke, 2px) var(--color-acid);
+}
+
+/* ドット方眼の地 */
+.dy-dots {
+  background-image: radial-gradient(rgb(17 17 17 / 0.14) 1.2px, transparent 1.4px);
+  background-size: 22px 22px;
+}
+
+/* 画面全体にうっすら乗せる粒子 */
+.dy-grain {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>");
+  /* 画面全体に重なるので、合成モードは使わず半透明で重ねるだけにする（毎フレームの再計算を避ける） */
+  opacity: 0.06;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dy-marquee,
+  .dy-spin,
+  .dy-float,
+  .dy-cycle,
+  .dy-mesh-text {
+    animation: none;
+  }
+}
