@@ -99,7 +99,14 @@ export function ArtifactsApp() {
           Yoak
           <span className="text-[12px] font-normal tracking-[0.06em] text-mute">artifacts</span>
         </a>
-        <button type="button" className={btnPrimary} onClick={() => go({ name: "new" })}>
+        <button
+          type="button"
+          className={btnPrimary}
+          // すでに登録画面なら何もしない（保存中に押しても、開いているフォームのまま完了を受け取れるように）
+          onClick={() => {
+            if (viewRef.current.name !== "new") go({ name: "new" });
+          }}
+        >
           ＋ 登録する
         </button>
       </header>
