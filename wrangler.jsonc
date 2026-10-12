@@ -6,8 +6,15 @@
   "vars": {
     "BASIC_AUTH_USER": "yoak",
     // Notion の Contact DB（データソース）の ID。お問い合わせの保存先
-    "NOTION_CONTACT_DATA_SOURCE_ID": "47ea414a-7a31-454c-9599-300e94cf1c06"
+    "NOTION_CONTACT_DATA_SOURCE_ID": "47ea414a-7a31-454c-9599-300e94cf1c06",
+    // アーティファクト共有（/artifacts*）の Cloudflare Access。値は PO が設定する（docs/artifacts/setup.md）
+    // Zero Trust のチームドメイン（例: yoak.cloudflareaccess.com）
+    "ACCESS_TEAM_DOMAIN": "",
+    // Access Application の Application Audience (AUD) Tag
+    "ACCESS_AUD": ""
   },
+  // D1（binding 名 DB）は、PO が D1 を作ってから d1_databases を足す（docs/artifacts/setup.md）。
+  // ID なしで書くとデプロイが落ちるので、それまでは書かない。ローカルでは wrangler.local.jsonc を使う
   "assets": {
     "directory": "./out",
     "binding": "ASSETS",

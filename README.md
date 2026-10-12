@@ -67,3 +67,20 @@ npx wrangler secret put NOTION_CONTACT_TOKEN   # Contact DB に「追加だけ�
 npx wrangler secret put SLACK_WEBHOOK_URL      # 通知先チャンネルの Incoming Webhook URL
 npx wrangler secret put TURNSTILE_SECRET_KEY   # Turnstile のシークレットキー
 ```
+
+## アーティファクト共有（/artifacts）
+
+Yoak メンバーが作った Claude のアーティファクト（claude.ai のリンク）を登録・一覧・検索するページ。
+計画は `docs/artifacts/plan.md`、決定は `docs/artifacts/decisions.md`。
+
+- `/artifacts*` と `/api/artifacts*` は Cloudflare Access（パス別の Application）で保護し、Basic 認証はかけない
+- Worker（`worker/access.ts`）が `Cf-Access-Jwt-Assertion` を検証して、ログインした人のメールを取り出す
+- API は `worker/artifacts.ts`、データは D1（binding 名 `DB`、スキーマは `migrations/`）。D1 が無いあいだは `/api/artifacts*` が 503
+
+Cloudflare の設定（D1 の作成、Access、`ACCESS_TEAM_DOMAIN`・`ACCESS_AUD`）とローカル開発の仕方は `docs/artifacts/setup.md`。
+
+```sh
+cp .dev.vars.example .dev.vars                                       # ローカル用のログインメール
+npx wrangler d1 migrations apply DB --local -c wrangler.local.jsonc  # ローカル D1 を作る
+npm run build && npx wrangler dev -c wrangler.local.jsonc
+```

@@ -3,10 +3,14 @@
 // パスワードは `wrangler secret put BASIC_AUTH_PASSWORD` で設定する。
 // シークレットを削除すれば認証なしで公開される。
 // /api/contact はお問い合わせの受付（worker/contact.ts）。
+// /artifacts* と /api/artifacts* はアーティファクト共有。Basic 認証はかけず、
+// Cloudflare Access の JWT だけを検証する（worker/access.ts、決定ログ AD-4・AD-5）。
 
+import { getAccessEmail, type AccessEnv } from "./access";
+import { handleArtifacts, type ArtifactsEnv } from "./artifacts";
 import { handleContact, type ContactEnv } from "./contact";
 
-interface Env extends ContactEnv {
+interface Env extends ContactEnv, AccessEnv, ArtifactsEnv {
   ASSETS: { fetch(request: Request): Promise<Response> };
   BASIC_AUTH_USER?: string;
   BASIC_AUTH_PASSWORD?: string;
@@ -34,8 +38,38 @@ function isAuthorized(request: Request, user: string, password: string) {
   }
 }
 
+// Access の Application のパス（yoak.tokyo/artifacts*、yoak.tokyo/api/artifacts*）と同じ前方一致にする。
+// /artifacts.txt など、静的書き出しが /artifacts ページ用に作るファイルも含めるため
+const isArtifactsApi = (pathname: string) => pathname.startsWith("/api/artifacts");
+const isArtifactsPage = (pathname: string) => pathname.startsWith("/artifacts");
+
+async function handleArtifactsRoute(request: Request, env: Env, pathname: string) {
+  const email = await getAccessEmail(request, env);
+  if (isArtifactsApi(pathname)) {
+    if (!email) {
+      return new Response(JSON.stringify({ ok: false, message: "ログインが必要です。" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
+      });
+    }
+    return handleArtifacts(request, env, email);
+  }
+  if (!email) {
+    return new Response("このページを見る権限がありません。", {
+      status: 403,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+    });
+  }
+  return env.ASSETS.fetch(request);
+}
+
 const worker = {
   async fetch(request: Request, env: Env, ctx: { waitUntil(promise: Promise<unknown>): void }) {
+    const { pathname } = new URL(request.url);
+    if (isArtifactsApi(pathname) || isArtifactsPage(pathname)) {
+      return handleArtifactsRoute(request, env, pathname);
+    }
+
     const password = env.BASIC_AUTH_PASSWORD;
     if (password && !isAuthorized(request, env.BASIC_AUTH_USER ?? "", password)) {
       return new Response("Authentication required", {
@@ -43,7 +77,7 @@ const worker = {
         headers: { "WWW-Authenticate": 'Basic realm="Yoak preview", charset="UTF-8"' },
       });
     }
-    if (new URL(request.url).pathname === "/api/contact") return handleContact(request, env, ctx);
+    if (pathname === "/api/contact") return handleContact(request, env, ctx);
     return env.ASSETS.fetch(request);
   },
 };
