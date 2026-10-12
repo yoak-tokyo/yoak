@@ -60,3 +60,10 @@ yoak.tokyo の本番では Basic 認証を使わない前提なので、プレ�
 - 詳細ページは作らず、一覧から claude.ai を直接開く。編集・削除の入口だけを用意する
 - タグは自由入力で、よく使うタグを候補に出す
 - 並びは新しい順で固定
+
+## AD-13 workers.dev のアドレスで公開し、Worker 全体に Access をかける（2026-10-13・PO＋PM、Q-4）
+
+- PO：社内で使うだけなので独自ドメインは要らない。コーポレートサイトの切り替え時期は未定
+- PM：yoak.tokyo は Cloudflare に無いので、Worker の workers.dev（とプレビュー URL）に Cloudflare Access をかける。workers.dev の Access は Worker 単位なので、コーポレートサイトのプレビューも同じ Google ログインの対象になる
+- Access の JWT が正しいリクエストには Basic 認証をかけない（二重ログインを避ける。AD-8 を置き換える）。JWT が無い経路では今までどおり Basic 認証
+- 将来 yoak.tokyo をこの Worker に向けるときは、AD-4 のパス別 Application を足す（手順書に残す）
