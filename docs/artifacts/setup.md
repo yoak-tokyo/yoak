@@ -13,7 +13,7 @@ PO が Cloudflare でやる設定を、上から順に書いている。コー�
 
 1. D1 を作り、マイグレーションを当てる（ターミナル）
 2. `wrangler.jsonc` に D1 を書いて PR にする（開発チームに頼んでもよい）
-3. Zero Trust でログイン方法（Google、One-time PIN）を足す
+3. Zero Trust でログイン方法（Google）を足す
 4. Access Application を作る
 5. `ACCESS_TEAM_DOMAIN`・`ACCESS_AUD` を `wrangler.jsonc` に書いて PR にする
 6. 確かめる
@@ -63,7 +63,7 @@ npx wrangler d1 create yoak-artifacts
 npx wrangler d1 migrations apply DB --remote
 ```
 
-`0001_artifacts.sql` が ✅ になれば完了。この変更を PR にして main にマージすると、Workers Builds が D1 つきでデプロイする。
+`migrations/` のファイル（`0001_artifacts.sql`、`0002_business.sql` …）がすべて ✅ になれば完了。この変更を PR にして main にマージすると、Workers Builds が D1 つきでデプロイする。
 
 > 順番の注意：マイグレーションを当てる前に D1 つきでデプロイされると、`/api/artifacts*` が「テーブルが無い」で 500 になる。マイグレーションを先に当てる。
 
@@ -74,10 +74,12 @@ npx wrangler d1 migrations apply DB --remote
 Cloudflare ダッシュボード → **Zero Trust** → **Settings** → **Team name and domain**。
 ここの **Team domain**（`<チーム名>.cloudflareaccess.com`）を 5 で使う。チームがまだ無ければ、Zero Trust を初めて開いたときにチーム名を決める画面が出る（Free プランで足りる）。
 
+ログイン方法は Google だけにする（AD-11）。One-time PIN は足さない。Google アカウントを持っていない人には、Google アカウントを作ってもらう（Gmail 以外のメールアドレスでも作れる）。
+
 ### Google ログイン
 
 1. Google Cloud Console でプロジェクトを作る（既存でもよい）
-2. **APIs & Services** → **OAuth consent screen** で同意画面を作る。対象（User type / Audience）は **External**（Yoak 外の Google アカウントも入れるため。AD-3）
+2. **APIs & Services** → **OAuth consent screen** で同意画面を作る。対象（User type / Audience）は **External** のまま（Yoak 外の Google アカウントも入れるため。AD-3、AD-11）
 3. **APIs & Services** → **Credentials** → **Create credentials** → **OAuth client ID**、種類は **Web application**
    - **Authorized JavaScript origins**：`https://<チーム名>.cloudflareaccess.com`
    - **Authorized redirect URIs**：`https://<チーム名>.cloudflareaccess.com/cdn-cgi/access/callback`
@@ -85,11 +87,6 @@ Cloudflare ダッシュボード → **Zero Trust** → **Settings** → **Team 
 5. Cloudflare ダッシュボード → **Zero Trust** → **Integrations** → **Identity providers** → **Add new identity provider** → **Google**
    - **App ID** に Client ID、**Client secret** に Client secret を入れて **Save**
    - 一覧の Google の横の **Test** でログインできるか確かめる
-
-### One-time PIN（Google 以外の許可した人用）
-
-同じ **Identity providers** で **Add new identity provider** → **One-time PIN** を選ぶ。
-メールに届く数字でログインできるようになる（AD-4）。
 
 ## 4. Access Application を作る
 
@@ -105,10 +102,9 @@ Cloudflare ダッシュボード → **Zero Trust** → **Settings** → **Team 
 - **Access policies**：**Create new policy**
   - **Policy name**：`アーティファクト共有を見られる人`
   - **Action**：**Allow**
-  - **Include** に、許可する人を足す（Q-3 で決めた範囲）
-    - Yoak のドメインの人全員：**Emails ending in** → `@yoak.tokyo` など
-    - 個別に許可する人：**Emails** → メールアドレスを 1 件ずつ
-- **Login methods**：**Google** と **One-time PIN** にチェック（**Accept all available identity providers** は外す）
+  - **Include** → **Emails** を選び、許可する人のメールアドレスを 1 件ずつ足す（AD-11。ドメイン単位の **Emails ending in** は使わない）
+  - あとから人を足すときも、このポリシーの **Emails** にメールアドレスを足す
+- **Login methods**：**Google** だけにチェック（**Accept all available identity providers** は外す）
 - **Session Duration**：既定（24 hours）でよい
 - **Create** を押す
 
@@ -164,8 +160,9 @@ npx wrangler dev -c wrangler.local.jsonc  # http://localhost:8787
 ```sh
 curl http://localhost:8787/api/artifacts/me
 curl -X POST http://localhost:8787/api/artifacts -H 'Content-Type: application/json' \
-  -d '{"url":"https://claude.ai/public/artifacts/xxx","title":"テスト","description":"説明","tags":["営業"]}'
-curl 'http://localhost:8787/api/artifacts?q=テスト&tag=営業'
+  -d '{"url":"https://claude.ai/public/artifacts/xxx","title":"テスト","description":"説明","business":"Yoak","tags":["営業"]}'
+curl 'http://localhost:8787/api/artifacts?business=Yoak&q=テスト&tag=営業'
+curl http://localhost:8787/api/artifacts/tags
 ```
 
 ## API の一覧（画面を作る人向け）
@@ -174,14 +171,16 @@ curl 'http://localhost:8787/api/artifacts?q=テスト&tag=営業'
 
 | メソッド・パス | 内容 |
 | --- | --- |
-| `GET /api/artifacts?q=&tag=` | 一覧（新しい順）。`q` はタイトル・説明の部分一致、`tag` はタグの完全一致。`{ ok, artifacts: [...] }` |
-| `POST /api/artifacts` | 登録。本文 `{ url, title, description?, tags? }`。`{ ok, artifact }`（201） |
+| `GET /api/artifacts?q=&tag=&business=` | 一覧（新しい順）。`q` はタイトル・説明の部分一致、`tag` はタグの完全一致、`business` は事業の完全一致（組み合わせると AND。事業の値が 6 つ以外なら 400）。`{ ok, artifacts: [...] }` |
+| `POST /api/artifacts` | 登録。本文 `{ url, title, business, description?, tags? }`。`{ ok, artifact }`（201） |
 | `GET /api/artifacts/me` | ログイン中のメール。`{ ok, email }` |
+| `GET /api/artifacts/tags` | 使われているタグと件数。件数の多い順（同数は名前順）。`{ ok, tags: [{ name, count }] }` |
 | `GET /api/artifacts/:id` | 1 件。`{ ok, artifact }` |
 | `PATCH /api/artifacts/:id` | 更新（登録した本人だけ。他人は 403）。送った項目だけ変わる。`tags` を送ると置き換え |
 | `DELETE /api/artifacts/:id` | 削除（登録した本人だけ。他人は 403） |
 
-`artifact` の形：`{ id, url, title, description, author_email, created_at, updated_at, tags: string[] }`
+`artifact` の形：`{ id, url, title, description, business, author_email, created_at, updated_at, tags: string[] }`
 
-入力の決まり：`url` は `https://claude.ai/` で始まる 2048 文字以内、`title` は必須で 200 文字以内、`description` は 2000 文字以内、`tags` は 1 個 50 文字以内で 10 個まで（前後の空白は取り、重複はまとめる）。
+入力の決まり：`url` は `https://claude.ai/` で始まる 2048 文字以内、`title` は必須で 200 文字以内、`description` は 2000 文字以内、`business` は必須で `Yoak` / `nightbrew` / `nomitai` / `LAMP` / `CaseMatch` / `その他` のどれか（綴りどおり。値の一覧は `worker/artifacts.ts` の `BUSINESSES`。B-3 より前に登録した分は `その他`）、`tags` は 1 個 50 文字以内で 10 個まで（前後の空白は取り、重複はまとめる）。
+PATCH は送った項目だけを変える（`business` も送ったときだけ変わる）。
 POST・PATCH は `Content-Type: application/json` で送る。別のサイトからの書き込み（`Origin` が違う）は 403。
