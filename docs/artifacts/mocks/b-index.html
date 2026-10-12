@@ -1,0 +1,568 @@
+<title>Yoak アーティファクト 案B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+/* コーポレートサイト（src/app/globals.css）の色と書体にそろえる。サイトはライト一択なので、モックも明るい見た目に固定する */
+:root {
+  --ink: #111111;
+  --paper: #ffffff;
+  --mist: #f4f4f2;
+  --mute: #6b6b6b;
+  --line: rgba(17, 17, 17, 0.12);
+  --ok: #10b981;
+  --danger: #c2341b;
+  --accent: #111111;
+  --accent-ink: #ffffff;
+  --font-sans: "Inter Tight", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-en: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --gutter: clamp(16px, 4vw, 40px);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.8;
+  font-feature-settings: "palt";
+  letter-spacing: 0.04em;
+  word-break: auto-phrase;
+  line-break: strict;
+}
+::selection { background: var(--ink); color: var(--paper); }
+button, input, textarea { font: inherit; letter-spacing: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; padding: 0; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 500; }
+p { margin: 0; }
+ul { list-style: none; margin: 0; padding: 0; }
+.label { font-family: var(--font-en); font-size: 0.75rem; letter-spacing: 0.06em; }
+.mute { color: var(--mute); }
+.wrap { max-width: 1280px; margin: 0 auto; padding-inline: var(--gutter); }
+
+/* モック表示の帯 */
+.mockbar {
+  background: var(--ink); color: var(--paper);
+  font-size: 12px; line-height: 1.6;
+  padding: 8px var(--gutter);
+  display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center;
+}
+.mockbar b { font-weight: 500; }
+.mockbar nav { display: flex; gap: 12px; margin-left: auto; }
+.mockbar nav a { color: var(--paper); opacity: 0.7; text-underline-offset: 3px; }
+.mockbar nav a[aria-current] { opacity: 1; text-decoration: none; border-bottom: 1px solid currentColor; }
+
+/* ヘッダー（サブページの SubpageHeader にそろえる） */
+.top {
+  border-bottom: 1px solid var(--line);
+  padding: 18px var(--gutter);
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: var(--paper);
+}
+.logo { font-family: var(--font-en); font-weight: 600; font-size: 19px; letter-spacing: -0.01em; display: inline-flex; align-items: baseline; gap: 10px; }
+.logo span { font-weight: 400; font-size: 12px; letter-spacing: 0.06em; color: var(--mute); }
+
+/* ボタン */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 44px; padding: 0 20px;
+  background: var(--accent); color: var(--accent-ink);
+  text-decoration: none; font-size: 14px; letter-spacing: 0.06em;
+  transition: opacity 0.3s;
+}
+.btn-primary:hover { opacity: 0.85; }
+.btn-line {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px;
+  border: 1px solid var(--ink); font-size: 14px;
+}
+.btn-line:hover { background: var(--ink); color: var(--paper); }
+.btn-text { min-height: 44px; padding: 0 8px; font-size: 14px; text-decoration: underline; text-underline-offset: 4px; }
+.btn-text.danger, .danger { color: var(--danger); }
+.btn-danger { min-height: 44px; padding: 0 20px; background: var(--danger); color: #fff; font-size: 14px; }
+
+/* チップ（タグ絞り込み） */
+.chip {
+  display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px;
+  border: 1px solid var(--line); font-size: 13px; white-space: nowrap;
+  transition: border-color 0.3s, background 0.3s;
+}
+.chip:hover { border-color: var(--ink); }
+.chip.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.chip-sep { width: 1px; height: 20px; background: var(--line); align-self: center; }
+.tag { font-size: 12px; color: var(--mute); letter-spacing: 0.04em; }
+button.tag:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+
+/* 検索 */
+.search { position: relative; }
+.search input {
+  width: 100%; min-height: 48px; padding: 0 14px 0 40px;
+  border: 1px solid var(--line); background: var(--paper); font-size: 15px;
+  border-radius: 0; -webkit-appearance: none; appearance: none;
+}
+.search input:focus { outline: none; border-color: var(--ink); }
+.search svg { position: absolute; left: 14px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; stroke: var(--mute); fill: none; stroke-width: 1.6; }
+
+.empty { padding-block: 56px; display: grid; gap: 8px; justify-items: start; }
+.empty .btn-line { margin-top: 12px; }
+
+/* 詳細 */
+.page { max-width: 1280px; margin: 0 auto; padding: 32px var(--gutter) 96px; }
+.back { font-size: 13px; color: var(--mute); min-height: 44px; }
+.back:hover { color: var(--ink); }
+.detail-body { max-width: 680px; display: grid; gap: 20px; margin-top: 24px; }
+.detail-title { font-size: clamp(1.5rem, 3.2vw, 2.25rem); line-height: 1.5; }
+.detail-desc { font-size: 15px; line-height: 2.1; color: rgba(17, 17, 17, 0.8); max-width: 40em; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.open-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.url { font-family: var(--font-en); font-size: 12px; overflow-wrap: anywhere; }
+.owner-tools { border-top: 1px solid var(--line); padding-top: 20px; margin-top: 12px; display: grid; gap: 8px; }
+.owner-tools .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.owner-tools.confirm { border: 1px solid var(--danger); padding: 20px; gap: 16px; }
+.owner-note { font-size: 13px; border-top: 1px solid var(--line); padding-top: 20px; margin-top: 12px; }
+
+/* 登録・編集 */
+.form-page { max-width: calc(640px + var(--gutter) * 2); }
+.form-title { font-size: clamp(1.5rem, 3vw, 2rem); margin-top: 24px; }
+.form-lead { margin-top: 8px; font-size: 14px; }
+#form { display: grid; gap: 28px; margin-top: 36px; }
+.field { display: grid; gap: 8px; }
+.field > label { font-size: 14px; font-weight: 500; }
+.req { font-size: 11px; color: var(--mute); font-weight: 400; margin-left: 6px; }
+.field input[type="text"], .field input[type="url"], .field textarea {
+  width: 100%; min-height: 48px; padding: 10px 14px;
+  border: 1px solid var(--line); background: var(--paper); border-radius: 0; font-size: 16px;
+  -webkit-appearance: none; appearance: none;
+}
+.field textarea { line-height: 1.8; resize: vertical; }
+.field input:focus, .field textarea:focus { outline: none; border-color: var(--ink); }
+.field [aria-invalid="true"] { border-color: var(--danger); }
+.msg { font-size: 12px; color: var(--mute); }
+.msg.err { color: var(--danger); }
+.tag-input {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  border: 1px solid var(--line); padding: 7px 8px; min-height: 48px;
+}
+.tag-input:focus-within { border-color: var(--ink); }
+.tag-input .tag.on { display: inline-flex; align-items: center; gap: 2px; background: var(--mist); color: var(--ink); padding: 3px 4px 3px 10px; font-size: 13px; }
+.tag-input .tag.on button { width: 26px; height: 26px; color: var(--mute); }
+.tag-input input { flex: 1; min-width: 8em; border: 0 !important; background: transparent !important; min-height: 32px !important; padding: 0 6px !important; font-size: 16px; outline: none; }
+.sugg { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px; }
+.sugg .label { margin-right: 4px; }
+.form-actions { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+
+/* トースト */
+#toast {
+  position: fixed; left: 50%; translate: -50% 0;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  background: var(--ink); color: var(--paper);
+  padding: 12px 18px; font-size: 13px; max-width: calc(100% - 32px); z-index: 50;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* 案 B：インデックス。行を詰め、検索とタグを上に貼り付けて、件数が増えても探しやすくする */
+body { font-size: 14px; }
+.head { padding-block: 32px 20px; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.head h1 { font-size: clamp(1.375rem, 2.6vw, 1.75rem); margin-top: 6px; }
+.toolbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10;
+  background: var(--paper); border-bottom: 1px solid var(--line); border-top: 1px solid var(--line);
+}
+.toolbar-inner { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 10px 16px; align-items: center; padding-block: 10px; }
+.toolbar .search input { min-height: 40px; font-size: 14px; }
+.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-block: 2px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { min-height: 30px; font-size: 12px; padding: 0 10px; }
+
+.rows { padding-bottom: 120px; }
+.row {
+  position: relative;
+  display: grid; grid-template-columns: 5.5rem 8rem minmax(0, 1fr) 9rem 6rem 2.75rem;
+  gap: 16px; align-items: baseline;
+  padding-block: 14px; border-bottom: 1px solid var(--line);
+  transition: opacity 0.4s, background 0.3s;
+}
+.row-head { padding-block: 10px; align-items: center; }
+.rows:hover .row:not(.row-head) { opacity: 0.4; }
+.rows .row:not(.row-head):hover, .rows .row:focus-within { opacity: 1; background: var(--mist); }
+.c-date { font-family: var(--font-en); font-size: 13px; color: var(--mute); font-variant-numeric: tabular-nums; }
+.c-biz { font-size: 12px; }
+.c-main { min-width: 0; display: grid; gap: 2px; }
+.c-title { font-size: 15px; font-weight: 500; text-decoration: none; }
+.c-title::after { content: ""; position: absolute; inset: 0; }
+.c-title:focus-visible { outline: none; }
+.row:has(.c-title:focus-visible) { outline: 2px solid var(--ink); outline-offset: -2px; }
+.c-desc { font-size: 12px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.c-type { font-size: 12px; color: var(--mute); }
+.c-by { font-size: 12px; }
+.me { border-bottom: 1px solid var(--ink); }
+.c-open {
+  position: relative; z-index: 1; justify-self: end; align-self: center;
+  width: 40px; height: 40px; display: grid; place-items: center;
+  border: 1px solid var(--line); text-decoration: none; font-family: var(--font-en);
+  transition: background 0.3s, color 0.3s;
+}
+.c-open:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.empty { padding-inline: 0; }
+
+@media (max-width: 760px) {
+  .toolbar-inner { grid-template-columns: minmax(0, 1fr); }
+  .row-head { display: none; }
+  .row { grid-template-columns: auto minmax(0, 1fr) 44px; grid-template-areas: "date biz open" "main main open" "type by open"; gap: 4px 12px; padding-block: 14px; align-items: start; }
+  .row > .c-date { grid-area: date; font-size: 12px; }
+  .c-biz { grid-area: biz; }
+  .c-main { grid-area: main; }
+  .c-type { grid-area: type; }
+  .c-by { grid-area: by; justify-self: end; }
+  .c-open { grid-area: open; width: 44px; height: 44px; }
+  .c-desc { white-space: normal; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+  .rows:hover .row:not(.row-head) { opacity: 1; }
+}
+
+</style>
+<div class="mockbar"><span><b>U-1 モック・案B「インデックス」</b>　データはダミーで、登録・編集・削除は保存されません</span><nav aria-label="ほかの案"><a href="https://claude.ai/artifact/XauQXS4WhCY6Y4BjfndgHr" target="_top">案A ギャラリー</a><a href="https://claude.ai/artifact/83R9q6pNYZGhcJJ9qxrr1U" aria-current="page" target="_top">案B インデックス</a><a href="https://claude.ai/artifact/RymsYosCbQVAG6gDC7HG5X" target="_top">案C 事業の棚</a></nav></div>
+<header class="top">
+  <a href="#" class="logo" data-action="list" aria-label="一覧へ">Yoak<span>artifacts</span></a>
+  <button class="btn-primary" data-action="new">＋ 登録する</button>
+</header>
+<main id="app"></main>
+<div id="toast" role="status" hidden></div>
+<script>
+// 案 B：インデックス。News の行リストを広げた、表に近い一覧。行ごとに claude.ai へ直接飛べる
+const V = {
+  listPage() {
+    return `<section class="wrap head">
+        <div>
+          <p class="label mute">artifacts</p>
+          <h1>アーティファクト一覧</h1>
+        </div>
+        <p class="label mute" id="count" aria-live="polite"></p>
+      </section>
+      <div class="toolbar">
+        <div class="wrap toolbar-inner">
+          <div class="search"><svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg><input id="q" type="search" placeholder="キーワードで探す（スペースで AND）" aria-label="キーワードで探す"></div>
+          <div class="chips" id="tags" role="group" aria-label="タグで絞り込む"></div>
+        </div>
+      </div>
+      <section class="wrap"><div id="results"></div></section>`;
+  },
+  results(list) {
+    const head = `<div class="row row-head label mute" aria-hidden="true"><span>date</span><span>business</span><span>title</span><span>type</span><span>by</span><span></span></div>`;
+    return `<div class="rows" role="list">${head}${list.map((it) => {
+      const biz = businessOf(it);
+      const types = it.tags.filter((t) => t !== biz);
+      return `<div class="row" role="listitem">
+        <time class="c-date">${fmtDate(it.date)}</time>
+        <span class="c-biz">${esc(biz || "—")}</span>
+        <div class="c-main">
+          <a href="#" class="c-title" data-action="item" data-id="${it.id}">${esc(it.title)}</a>
+          <p class="c-desc">${esc(it.description)}</p>
+        </div>
+        <span class="c-type">${types.map((t) => `#${esc(t)}`).join(" ") || "—"}</span>
+        <span class="c-by">${it.owner === ME ? '<span class="me">あなた</span>' : esc(it.owner)}</span>
+        <a href="${esc(it.url)}" class="c-open" data-action="quickopen" aria-label="${esc(it.title)} を claude.ai で開く" title="claude.ai で開く">↗</a>
+      </div>`;
+    }).join("")}</div>`;
+  },
+};
+
+// ===== 共通：データ・状態・詳細・登録/編集 =====
+// 案ごとに違うのは window.V（一覧の描き方）と CSS だけ。
+const ME = "青井 ひかり";
+const BUSINESS = ["Yoak", "night brew", "コーヒーノミタイ", "LAMP", "CaseMatch"];
+
+let seq = 100;
+let items = [
+  { id: 1, title: "夜のギフトセット LP の試作", description: "年末のギフト需要に向けたランディングページの下書き。箱の写真が入る前提で、文字だけで流れを確かめるためのもの。", tags: ["night brew", "LP"], owner: "青井 ひかり", date: "2026-10-10" },
+  { id: 2, title: "店舗マップのプロトタイプ", description: "地図の上に店をピンで置き、焙煎度と抽出方法で絞り込める動く試作。データは仮の 20 店。", tags: ["コーヒーノミタイ", "試作"], owner: "白石 けい", date: "2026-10-09" },
+  { id: 3, title: "焙煎プロファイルの比較表", description: "デカフェ 3 種の焙煎時間・温度・香りのメモを横並びにした表。試飲会の前に見返す用。", tags: ["night brew", "表"], owner: "黒川 まな", date: "2026-10-08" },
+  { id: 4, title: "案件と人のマッチングの流れ", description: "案件の登録から面談までを 1 枚の図にしたもの。営業の説明で画面共有する想定。", tags: ["CaseMatch", "図解"], owner: "緑川 そう", date: "2026-10-07" },
+  { id: 5, title: "週次の稼働レポートを下書きするツール", description: "その週のメモを貼ると、稼働時間・やったこと・次週の予定に分けて下書きを出す。", tags: ["CaseMatch", "ツール"], owner: "青井 ひかり", date: "2026-10-06" },
+  { id: 6, title: "LAMP 企画の説明スライド", description: "最初の打ち合わせで見せた 8 枚のスライド。課題・やりたいこと・最初の一歩の順。", tags: ["LAMP", "スライド"], owner: "白石 けい", date: "2026-10-04" },
+  { id: 7, title: "バリュー 4 つのカード", description: "Want it first. から Reach someone. まで、4 つのバリューをカードにして並べたもの。", tags: ["Yoak", "図解"], owner: "黒川 まな", date: "2026-10-03" },
+  { id: 8, title: "経費の按分シミュレーター", description: "自宅の家賃や通信費を、仕事に使った割合で按分して月額を出す。数字を動かして試せる。", tags: ["Yoak", "ツール"], owner: "青井 ひかり", date: "2026-10-01" },
+  { id: 9, title: "一杯の記録フォーム", description: "飲んだコーヒーを、豆・店・味の印象で残すフォームの試作。スマホで片手入力できるかを見る。", tags: ["コーヒーノミタイ", "試作"], owner: "緑川 そう", date: "2026-09-29" },
+  { id: 10, title: "会議メモから決めたことを抜き出す", description: "議事録を貼ると「決めたこと」「やること」「持ち越し」に分ける。どの事業の会議でも使える。", tags: ["ツール"], owner: "白石 けい", date: "2026-09-27" },
+  { id: 11, title: "定期便の解約理由ダッシュボード", description: "解約時アンケートの回答を理由別に数えたグラフ。数字はダミーで、見せ方の検討用。", tags: ["night brew", "ダッシュボード"], owner: "黒川 まな", date: "2026-09-25" },
+  { id: 12, title: "ユーザーインタビューのまとめ", description: "5 人に聞いた話を、困りごと・いまのやり方・欲しいものの 3 つに整理したもの。", tags: ["LAMP", "資料"], owner: "緑川 そう", date: "2026-09-22" },
+  { id: 13, title: "アーティファクトの作り方メモ", description: "Claude でアーティファクトをつくって共有リンクを出すまでの手順。はじめての人向け。", tags: ["Yoak", "資料"], owner: "青井 ひかり", date: "2026-09-18" },
+  { id: 14, title: "案件の単価相場メモ", description: "職種ごとの単価の幅を表にしたもの。社内の目安で、外には出さない。", tags: ["CaseMatch", "表"], owner: "白石 けい", date: "2026-09-15" },
+];
+items.forEach((it) => (it.url = "https://claude.ai/public/artifacts/" + fakeId(it.id)));
+
+function fakeId(n) {
+  const h = (n * 2654435761 >>> 0).toString(16).padStart(8, "0");
+  return h + "-" + h.slice(0, 4) + "-4" + h.slice(1, 4) + "-a" + h.slice(2, 5) + "-" + (h + h).slice(0, 12);
+}
+
+const state = { view: "list", id: null, q: "", tag: null, confirmDelete: false, draft: null, errors: {} };
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function fmtDate(d) { return d.replaceAll("-", "."); }
+function who(o) { return o === ME ? "あなた" : o; }
+function find(id) { return items.find((x) => x.id === id); }
+function businessOf(it) { return it.tags.find((t) => BUSINESS.includes(t)) || null; }
+
+function allTags() {
+  const count = {};
+  items.forEach((it) => it.tags.forEach((t) => (count[t] = (count[t] || 0) + 1)));
+  const biz = BUSINESS.filter((b) => count[b]);
+  const rest = Object.keys(count).filter((t) => !BUSINESS.includes(t)).sort((a, b) => count[b] - count[a] || a.localeCompare(b, "ja"));
+  return { biz, rest, count };
+}
+
+function filtered() {
+  const q = state.q.trim().toLowerCase();
+  const words = q ? q.split(/\s+/) : [];
+  return items
+    .filter((it) => {
+      if (state.tag && !it.tags.includes(state.tag)) return false;
+      const hay = (it.title + " " + it.description + " " + it.tags.join(" ") + " " + it.owner).toLowerCase();
+      return words.every((w) => hay.includes(w));
+    })
+    .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+}
+
+// ---------- 画面切り替え ----------
+function go(view, id) {
+  state.view = view;
+  state.id = id ?? null;
+  state.confirmDelete = false;
+  state.errors = {};
+  if (view === "new") state.draft = { url: "", title: "", description: "", tags: [] };
+  if (view === "edit") {
+    const it = find(id);
+    state.draft = { url: it.url, title: it.title, description: it.description, tags: [...it.tags] };
+  }
+  render();
+  window.scrollTo({ top: 0 });
+}
+
+function render() {
+  const app = document.getElementById("app");
+  document.body.dataset.view = state.view;
+  if (state.view === "list") {
+    app.innerHTML = V.listPage();
+    const q = document.getElementById("q");
+    if (q) q.value = state.q;
+    renderTags();
+    renderResults();
+  } else if (state.view === "detail") {
+    app.innerHTML = detailPage(find(state.id));
+  } else {
+    app.innerHTML = formPage();
+    renderTagField();
+  }
+}
+function renderResults() {
+  const list = filtered();
+  const el = document.getElementById("results");
+  const cnt = document.getElementById("count");
+  if (cnt) cnt.textContent = list.length === items.length ? `${items.length} 件` : `${items.length} 件中 ${list.length} 件`;
+  if (!list.length) {
+    el.innerHTML = `<div class="empty"><p>${state.q ? `「${esc(state.q)}」` : ""}${state.tag ? `${state.q ? "と" : ""}タグ「${esc(state.tag)}」` : ""}に合うものはありません。</p><p class="mute">ことばを変えるか、タグを外してください。</p><button class="btn-line" data-action="clear">条件をクリア</button></div>`;
+    return;
+  }
+  el.innerHTML = V.results(list);
+}
+function renderTags() {
+  const el = document.getElementById("tags");
+  if (el) el.innerHTML = V.tagsBar ? V.tagsBar() : defaultTagsBar();
+}
+function defaultTagsBar() {
+  const { biz, rest } = allTags();
+  const chip = (t) => `<button class="chip${state.tag === t ? " on" : ""}" data-action="tag" data-tag="${esc(t)}" aria-pressed="${state.tag === t}">${esc(t)}</button>`;
+  return `<button class="chip${!state.tag ? " on" : ""}" data-action="tag" data-tag="" aria-pressed="${!state.tag}">すべて</button>${biz.map(chip).join("")}<span class="chip-sep" aria-hidden="true"></span>${rest.map(chip).join("")}`;
+}
+
+// ---------- 詳細 ----------
+function detailPage(it) {
+  if (!it) return `<div class="page"><p>見つかりませんでした。</p></div>`;
+  const mine = it.owner === ME;
+  return `<article class="page detail">
+    <button class="back" data-action="list">← 一覧へ戻る</button>
+    ${V.detailHero ? V.detailHero(it) : ""}
+    <div class="detail-body">
+      <p class="label mute">${fmtDate(it.date)} ・ ${esc(who(it.owner))}</p>
+      <h1 class="detail-title">${esc(it.title)}</h1>
+      <p class="detail-desc">${esc(it.description) || '<span class="mute">説明はありません。</span>'}</p>
+      <ul class="tag-list">${it.tags.map((t) => `<li><button class="tag" data-action="tagfrom" data-tag="${esc(t)}">#${esc(t)}</button></li>`).join("")}</ul>
+      <div class="open-row">
+        <a class="btn-primary" href="${esc(it.url)}" data-action="open">claude.ai で開く <span aria-hidden="true">↗</span></a>
+        <button class="btn-line" data-action="copy" data-url="${esc(it.url)}">リンクをコピー</button>
+      </div>
+      <p class="url mute">${esc(it.url)}</p>
+      ${mine ? ownerTools(it) : `<p class="owner-note mute">編集と削除は、登録した ${esc(it.owner)} さんだけができます。</p>`}
+    </div>
+  </article>`;
+}
+function ownerTools(it) {
+  if (state.confirmDelete) {
+    return `<div class="owner-tools confirm" role="alert">
+      <p><strong>「${esc(it.title)}」を削除しますか？</strong><br><span class="mute">一覧から消えます。claude.ai の本体は消えません。</span></p>
+      <div class="row"><button class="btn-danger" data-action="delete-yes">削除する</button><button class="btn-line" data-action="delete-no">やめる</button></div>
+    </div>`;
+  }
+  return `<div class="owner-tools"><p class="label mute">あなたの登録</p><div class="row"><button class="btn-line" data-action="edit">編集する</button><button class="btn-text danger" data-action="delete">削除する</button></div></div>`;
+}
+
+// ---------- 登録・編集 ----------
+function formPage() {
+  const d = state.draft;
+  const e = state.errors;
+  const isEdit = state.view === "edit";
+  return `<div class="page form-page">
+    <button class="back" data-action="${isEdit ? "back-detail" : "list"}">← ${isEdit ? "詳細へ戻る" : "一覧へ戻る"}</button>
+    <h1 class="form-title">${isEdit ? "登録を編集する" : "アーティファクトを登録する"}</h1>
+    <p class="mute form-lead">${isEdit ? "変えたいところだけ直してください。" : "claude.ai で「公開」したアーティファクトのリンクを貼ります。本体は claude.ai に置いたままです。"}</p>
+    <form id="form" novalidate>
+      <div class="field">
+        <label for="f-url">claude.ai のリンク <span class="req">必須</span></label>
+        <input id="f-url" name="url" type="url" inputmode="url" placeholder="https://claude.ai/public/artifacts/…" value="${esc(d.url)}" aria-invalid="${!!e.url}" aria-describedby="f-url-msg">
+        <p class="msg${e.url ? " err" : ""}" id="f-url-msg">${e.url || "共有メニューの「リンクをコピー」で取れます。"}</p>
+      </div>
+      <div class="field">
+        <label for="f-title">タイトル <span class="req">必須</span></label>
+        <input id="f-title" name="title" type="text" maxlength="60" placeholder="例：店舗マップのプロトタイプ" value="${esc(d.title)}" aria-invalid="${!!e.title}" aria-describedby="f-title-msg">
+        <p class="msg${e.title ? " err" : ""}" id="f-title-msg">${e.title || "一覧で見つけやすい名前にします。"}</p>
+      </div>
+      <div class="field">
+        <label for="f-desc">説明</label>
+        <textarea id="f-desc" name="description" rows="4" maxlength="200" placeholder="何のためにつくったか、どこで使うか">${esc(d.description)}</textarea>
+        <p class="msg"><span id="f-desc-count">${d.description.length}</span> / 200</p>
+      </div>
+      <div class="field">
+        <label for="f-tag">タグ</label>
+        <div id="tagField"></div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">${isEdit ? "保存する" : "登録する"}</button>
+        <button type="button" class="btn-text" data-action="${isEdit ? "back-detail" : "list"}">やめる</button>
+      </div>
+    </form>
+  </div>`;
+}
+function renderTagField() {
+  const el = document.getElementById("tagField");
+  if (!el) return;
+  const d = state.draft;
+  const { biz, rest } = allTags();
+  const sugg = [...biz, ...rest].filter((t) => !d.tags.includes(t));
+  el.innerHTML = `<div class="tag-input">
+      ${d.tags.map((t) => `<span class="tag on">#${esc(t)}<button type="button" data-action="untag" data-tag="${esc(t)}" aria-label="${esc(t)} を外す">×</button></span>`).join("")}
+      <input id="f-tag" type="text" placeholder="${d.tags.length ? "追加" : "入力して Enter"}" enterkeyhint="done">
+    </div>
+    <p class="msg">${V.tagHint || "事業名と、種類（試作・ツールなど）を付けると探しやすくなります。"}</p>
+    ${sugg.length ? `<div class="sugg"><span class="label mute">よく使うタグ</span>${sugg.map((t) => `<button type="button" class="chip" data-action="addtag" data-tag="${esc(t)}">+ ${esc(t)}</button>`).join("")}</div>` : ""}`;
+}
+function addTag(t) {
+  t = t.trim().replace(/^#/, "");
+  if (!t || state.draft.tags.includes(t) || state.draft.tags.length >= 5) return;
+  state.draft.tags.push(t);
+  renderTagField();
+  document.getElementById("f-tag")?.focus();
+}
+
+function submitForm() {
+  const d = state.draft;
+  const e = {};
+  if (!d.url.trim()) e.url = "リンクを貼ってください。";
+  else if (!/^https:\/\/claude\.ai\/\S+/.test(d.url.trim())) e.url = "claude.ai のリンクを貼ってください。https://claude.ai/ で始まるものです。";
+  if (!d.title.trim()) e.title = "タイトルを入れてください。";
+  state.errors = e;
+  if (Object.keys(e).length) {
+    render();
+    document.querySelector('[aria-invalid="true"]')?.focus();
+    return;
+  }
+  if (state.view === "edit") {
+    Object.assign(find(state.id), { url: d.url.trim(), title: d.title.trim(), description: d.description.trim(), tags: [...d.tags] });
+    toast("保存しました（モックなので、再読み込みで元に戻ります）");
+    go("detail", state.id);
+  } else {
+    const it = { id: ++seq, url: d.url.trim(), title: d.title.trim(), description: d.description.trim(), tags: [...d.tags], owner: ME, date: "2026-10-13" };
+    items.unshift(it);
+    toast("登録しました（モックなので、再読み込みで消えます）");
+    go("detail", it.id);
+  }
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (el.hidden = true), 2800);
+}
+
+// ---------- イベント ----------
+document.addEventListener("click", (ev) => {
+  const a = ev.target.closest("[data-action]");
+  if (!a) return;
+  const act = a.dataset.action;
+  if (act === "open") { ev.preventDefault(); toast("モックなので、リンク先はありません"); return; }
+  if (act === "item") { ev.preventDefault(); go("detail", Number(a.dataset.id)); return; }
+  if (act === "quickopen") { ev.preventDefault(); ev.stopPropagation(); toast("モックなので、リンク先はありません"); return; }
+  if (act === "list") return go("list");
+  if (act === "new") return go("new");
+  if (act === "edit") return go("edit", state.id);
+  if (act === "back-detail") return go("detail", state.id);
+  if (act === "delete") { state.confirmDelete = true; return render(); }
+  if (act === "delete-no") { state.confirmDelete = false; return render(); }
+  if (act === "delete-yes") {
+    items = items.filter((x) => x.id !== state.id);
+    toast("削除しました（モックなので、再読み込みで戻ります）");
+    return go("list");
+  }
+  if (act === "tag") { state.tag = a.dataset.tag || null; renderTags(); renderResults(); return; }
+  if (act === "tagfrom") { state.tag = a.dataset.tag; state.q = ""; return go("list"); }
+  if (act === "jump") { ev.preventDefault(); document.getElementById(a.dataset.target)?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); return; }
+  if (act === "clear") { state.q = ""; state.tag = null; return render(); }
+  if (act === "addtag") return addTag(a.dataset.tag);
+  if (act === "untag") { state.draft.tags = state.draft.tags.filter((t) => t !== a.dataset.tag); return renderTagField(); }
+  if (act === "copy") {
+    const url = a.dataset.url;
+    Promise.resolve()
+      .then(() => navigator.clipboard.writeText(url))
+      .then(() => toast("リンクをコピーしました"))
+      .catch(() => {
+        const r = document.createRange();
+        const u = document.querySelector(".url");
+        if (u) { r.selectNodeContents(u); getSelection().removeAllRanges(); getSelection().addRange(r); }
+        toast("コピーできなかったので、下のリンクを選択しました");
+      });
+  }
+});
+document.addEventListener("input", (ev) => {
+  const t = ev.target;
+  if (t.id === "q") { state.q = t.value; renderResults(); return; }
+  if (!state.draft) return;
+  if (t.id === "f-url") state.draft.url = t.value;
+  if (t.id === "f-title") state.draft.title = t.value;
+  if (t.id === "f-desc") { state.draft.description = t.value; document.getElementById("f-desc-count").textContent = t.value.length; }
+});
+document.addEventListener("keydown", (ev) => {
+  const t = ev.target;
+  if (t.id === "f-tag") {
+    if ((ev.key === "Enter" || ev.key === ",") && !ev.isComposing) { ev.preventDefault(); addTag(t.value); }
+    else if (ev.key === "Backspace" && !t.value && state.draft.tags.length) { state.draft.tags.pop(); renderTagField(); document.getElementById("f-tag")?.focus(); }
+  }
+  if (t.id === "q" && ev.key === "Escape") { t.value = ""; state.q = ""; renderResults(); }
+});
+document.addEventListener("submit", (ev) => {
+  if (ev.target.id === "form") { ev.preventDefault(); submitForm(); }
+});
+
+render();
+
+</script>
