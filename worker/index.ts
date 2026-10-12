@@ -5,6 +5,8 @@
 // /api/contact はお問い合わせの受付（worker/contact.ts）。
 // /artifacts* と /api/artifacts* はアーティファクト共有。Basic 認証はかけず、
 // Cloudflare Access の JWT だけを検証する（worker/access.ts、決定ログ AD-4・AD-5）。
+// それ以外のパスも、Access の JWT が正しければ Basic 認証をかけない（二重ログインを避ける。AD-13）。
+// JWT の検証は 1 リクエストにつき多くても 1 回にする（/_next/* などの静的ファイルにも毎回かかるため）。
 
 import { getAccessEmail, type AccessEnv } from "./access";
 import { handleArtifacts, type ArtifactsEnv } from "./artifacts";
@@ -71,7 +73,12 @@ const worker = {
     }
 
     const password = env.BASIC_AUTH_PASSWORD;
-    if (password && !isAuthorized(request, env.BASIC_AUTH_USER ?? "", password)) {
+    // Basic 認証が通っていれば JWT は検証しない。通っていなければ Access の JWT を 1 回だけ検証する
+    if (
+      password &&
+      !isAuthorized(request, env.BASIC_AUTH_USER ?? "", password) &&
+      !(await getAccessEmail(request, env))
+    ) {
       return new Response("Authentication required", {
         status: 401,
         headers: { "WWW-Authenticate": 'Basic realm="Yoak preview", charset="UTF-8"' },

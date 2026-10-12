@@ -3,18 +3,22 @@
 PO が Cloudflare でやる設定を、上から順に書いている。コードは B-1 で入っている（`worker/access.ts`、`worker/artifacts.ts`、`migrations/`）。
 画面の名前は 2026-10 時点の Cloudflare ダッシュボードに合わせている。名前が変わっていたら近いものを探す。
 
-設定が済むまでの本番の動き：
+公開先は Worker の workers.dev のアドレス（AD-13）。yoak.tokyo はこの Worker に向いていない。
+workers.dev とプレビュー URL には Worker 単位で Access をかけるので、コーポレートサイトのプレビューも同じ Google ログインの対象になる。
+
+設定が済むまでの本番（workers.dev）の動き：
 
 - `/artifacts*` は 403、`/api/artifacts*` は 401（Access の値が空なので誰も通らない）
 - Access を設定しても D1 をつなぐまでは `/api/artifacts*` が 503
-- それ以外のページと `/api/contact` は今までどおり
+- それ以外のページと `/api/contact` は今までどおり（Basic 認証のパスワードがあれば Basic 認証）
+- Access の値が入ったあとは、Access の JWT が正しいリクエストには Basic 認証をかけない。JWT が無いリクエストは今までどおり Basic 認証
 
 ## 全体の順番
 
 1. D1 を作り、マイグレーションを当てる（ターミナル）
 2. `wrangler.jsonc` に D1 を書いて PR にする（開発チームに頼んでもよい）
 3. Zero Trust でログイン方法（Google）を足す
-4. Access Application を作る
+4. workers.dev とプレビュー URL に Access をかけ、ポリシーを直す
 5. `ACCESS_TEAM_DOMAIN`・`ACCESS_AUD` を `wrangler.jsonc` に書いて PR にする
 6. 確かめる
 
@@ -88,7 +92,84 @@ Cloudflare ダッシュボード → **Zero Trust** → **Settings** → **Team 
    - **App ID** に Client ID、**Client secret** に Client secret を入れて **Save**
    - 一覧の Google の横の **Test** でログインできるか確かめる
 
-## 4. Access Application を作る
+## 4. workers.dev とプレビュー URL に Access をかける
+
+yoak.tokyo はこの Worker に向いていない。そこで、Worker の workers.dev のアドレスとプレビュー URL に、Worker 単位で Access をかける（AD-13）。
+Worker 単位なので、`/artifacts` だけでなく**コーポレートサイトのプレビュー（workers.dev とプレビュー URL のすべてのページ）も同じ Google ログインの対象**になる。ログインした人には Basic 認証はかからない（Worker が Access の JWT を確かめて飛ばす）。
+
+### Access を有効にする
+
+Cloudflare ダッシュボード → **Workers & Pages** → `yoak-corporate-site` → **Settings** → **Domains & Routes**。
+
+1. **workers.dev** の行で **Enable Cloudflare Access** を押す
+2. **Preview URLs** の行でも **Enable Cloudflare Access** を押す
+
+有効にすると、それぞれに Access Application が自動で作られる。ポリシーも自動で作られる。
+
+| 対象 | 自動で作られるポリシー |
+| --- | --- |
+| workers.dev | `yoak-corporate-site - Production`（この Worker 専用） |
+| Preview URLs | `Cloudflare Workers Preview URLs`（**アカウントのすべての Worker のプレビューで共有**） |
+
+> 画面が違うとき：Worker の **Access** タブ（**Protect this Worker behind Access**）からも設定できる。ただし **All traffic** を選ぶと、将来つなぐ独自ドメイン（yoak.tokyo）やルートまで丸ごと保護される。コーポレートサイトを公開するときに困るので、こちらは使わない。**Domains & Routes** の workers.dev と Preview URLs の 2 つだけを有効にする。
+
+### ポリシーを AD-11 のとおりに直す
+
+自動で作られたポリシーには「Cloudflare のアカウントのメンバー」などの条件が入っている。これを、許可したメールの Google アカウントだけにする。
+**Domains & Routes** の各行の **Manage Cloudflare Access** から開くか、**Zero Trust** → **Access controls** → **Policies** で上の 2 つのポリシーを開く。
+
+- **Action**：**Allow**
+- **Include** → **Emails** だけにして、許可する人のメールアドレスを 1 件ずつ足す（AD-11。ドメイン単位の **Emails ending in** は使わない）。ほかに入っている条件は消す
+- あとから人を足すときも、2 つのポリシーの **Emails** に同じメールアドレスを足す
+
+次に **Zero Trust** → **Access controls** → **Applications** で、自動で作られた 2 つの Application（workers.dev 用とプレビュー URL 用）を、それぞれ **Configure** で開く。
+
+- **Login methods**：**Google** だけにチェック（**Accept all available identity providers** は外す）
+- **Session Duration**：既定（24 hours）でよい
+- **Save** を押す
+
+Access は「許可したもの以外は拒否」なので、ポリシーに当てはまらない人はログインしても入れない。
+
+> `Cloudflare Workers Preview URLs` のポリシーはアカウントで共有されている。ほかの Worker のプレビューにも同じ許可リストがかかる。
+
+## 5. `ACCESS_TEAM_DOMAIN`・`ACCESS_AUD` を設定する
+
+| 変数 | 値の取り方 | 例 |
+| --- | --- | --- |
+| `ACCESS_TEAM_DOMAIN` | 3 の **Team domain** | `yoak.cloudflareaccess.com` |
+| `ACCESS_AUD` | **Access controls** → **Applications** → 4 で自動で作られた Application の **Configure** → **Additional settings**（または **Overview**）の **Application Audience (AUD) Tag**。workers.dev 用とプレビュー URL 用の 2 つを**カンマ区切りで並べる** | `<workers.dev 用>,<プレビュー URL 用>`（それぞれ 64 文字の英数字） |
+
+どちらも秘密の値ではない（公開鍵の場所と、トークンの宛先の名前）。`wrangler.jsonc` の `vars` の空欄に書いて PR にする。
+
+```jsonc
+    "ACCESS_TEAM_DOMAIN": "yoak.cloudflareaccess.com",
+    "ACCESS_AUD": "<workers.dev 用の AUD Tag>,<プレビュー URL 用の AUD Tag>"
+```
+
+2 つの Application の AUD Tag が同じ値だったら、1 つだけ書けばよい。
+
+`ACCESS_DEV_EMAIL` は**本番には絶対に設定しない**（ローカル開発専用。設定しても localhost 以外では効かないようにしてあるが、置かない）。
+
+> 4 を済ませてから 5 がデプロイされるまでのあいだは、workers.dev を開くと Access のログインのあとに Basic 認証も出る（Worker がまだ JWT を確かめられないため）。`/artifacts` は 403 のまま。5 のデプロイで直る。
+
+## 6. 確かめる
+
+workers.dev の URL は、**Workers & Pages** → `yoak-corporate-site` → **Settings** → **Domains & Routes** の workers.dev の行で確かめる（以下 `<workers.dev の URL>`）。
+マージしてデプロイが終わったら、次を確かめる。
+
+1. シークレットウィンドウで `<workers.dev の URL>/artifacts` を開く → Access のログイン画面が出る
+2. 許可したアカウントで Google ログイン → ページが出る（画面ができるまでは 404 ページ）。Basic 認証は出ない
+3. 同じウィンドウで `<workers.dev の URL>/api/artifacts/me` → `{"ok":true,"email":"<自分のメール>"}`
+4. 同じウィンドウで `<workers.dev の URL>/` → コーポレートサイトのトップが Basic 認証なしで出る
+5. 別のシークレットウィンドウで、許可していないアカウントでログイン → Access の拒否画面
+6. PR のプレビュー URL（PR の Workers Builds の結果などにある）を開く → 同じ Google ログインが出て、ログインするとページが出る
+7. ターミナルで `curl -sI <workers.dev の URL>/` → Access のログイン画面へのリダイレクト（ログインなしでは入れない）
+
+---
+
+## 将来 yoak.tokyo をこの Worker に向けるとき
+
+yoak.tokyo を Cloudflare に移してこの Worker で配信するときは、`/artifacts*` と `/api/artifacts*` だけを守るパス別の Application を足す（AD-4）。コーポレートサイトの公開ページは保護しない。
 
 **Zero Trust** → **Access controls** → **Applications** → **Create new application** → **Self-hosted and private**。
 
@@ -99,43 +180,18 @@ Cloudflare ダッシュボード → **Zero Trust** → **Settings** → **Team 
   | （空） | `yoak.tokyo` | `artifacts*` |
   | （空） | `yoak.tokyo` | `api/artifacts*` |
   - `www.yoak.tokyo` でも配信しているなら、同じ 2 行を `www` でも足す
-- **Access policies**：**Create new policy**
-  - **Policy name**：`アーティファクト共有を見られる人`
-  - **Action**：**Allow**
-  - **Include** → **Emails** を選び、許可する人のメールアドレスを 1 件ずつ足す（AD-11。ドメイン単位の **Emails ending in** は使わない）
-  - あとから人を足すときも、このポリシーの **Emails** にメールアドレスを足す
+- **Access policies**：4 と同じく **Include** → **Emails** で 1 件ずつ足す（既存のポリシーを選んでもよい）
 - **Login methods**：**Google** だけにチェック（**Accept all available identity providers** は外す）
 - **Session Duration**：既定（24 hours）でよい
 - **Create** を押す
 
-Access は「許可したもの以外は拒否」なので、ポリシーに当てはまらない人はログインしても入れない。
+この Application の AUD Tag を `ACCESS_AUD` にカンマ区切りで足して PR にする。
 
-## 5. `ACCESS_TEAM_DOMAIN`・`ACCESS_AUD` を設定する
+確かめ方：
 
-| 変数 | 値の取り方 | 例 |
-| --- | --- | --- |
-| `ACCESS_TEAM_DOMAIN` | 3 の **Team domain** | `yoak.cloudflareaccess.com` |
-| `ACCESS_AUD` | **Access controls** → **Applications** → 4 の Application の **Configure** → **Additional settings**（または **Overview**）の **Application Audience (AUD) Tag** | 64 文字の英数字 |
-
-どちらも秘密の値ではない（公開鍵の場所と、トークンの宛先の名前）。`wrangler.jsonc` の `vars` の空欄に書いて PR にする。
-
-```jsonc
-    "ACCESS_TEAM_DOMAIN": "yoak.cloudflareaccess.com",
-    "ACCESS_AUD": "<AUD Tag>"
-```
-
-`ACCESS_DEV_EMAIL` は**本番には絶対に設定しない**（ローカル開発専用。設定しても localhost 以外では効かないようにしてあるが、置かない）。
-
-## 6. 確かめる
-
-マージしてデプロイが終わったら：
-
-1. シークレットウィンドウで `https://yoak.tokyo/artifacts` を開く → Access のログイン画面が出る
-2. 許可したアカウントでログイン → ページが出る（画面ができるまでは 404 ページ）
-3. 同じウィンドウで `https://yoak.tokyo/api/artifacts/me` → `{"ok":true,"email":"<自分のメール>"}`
-4. 許可していないアカウントでログイン → Access の拒否画面
-5. `https://yoak.tokyo/` などほかのページは、ログインなしで今までどおり見られる
-6. `https://yoak-corporate-site.yoak-corporate-site.workers.dev/api/artifacts` → 401（Access を通らない経路は弾く）
+1. シークレットウィンドウで `https://yoak.tokyo/artifacts` → Access のログイン画面 → 許可したアカウントでページが出る
+2. `https://yoak.tokyo/api/artifacts/me` → `{"ok":true,"email":"<自分のメール>"}`
+3. `https://yoak.tokyo/` などほかのページは、ログインなしで見られる（本番では Basic 認証のパスワードを外しておく）
 
 ---
 
@@ -151,7 +207,7 @@ npm run build
 npx wrangler dev -c wrangler.local.jsonc  # http://localhost:8787
 ```
 
-- `ACCESS_DEV_EMAIL` があると、localhost へのリクエストは Access の検証をせずにそのメールでログインしたことになる
+- `ACCESS_DEV_EMAIL` があると、localhost へのリクエストは Access の検証をせずにそのメールでログインしたことになる（`BASIC_AUTH_PASSWORD` を入れていても Basic 認証は飛ばされる）
 - ほかの人の登録として試すには `.dev.vars` のメールを変えて起動し直す
 - `npm run preview`（`wrangler.jsonc` を使う）でも起動できるが、D1 が無いので `/api/artifacts*` は 503 になる
 

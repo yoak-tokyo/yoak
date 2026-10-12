@@ -1,10 +1,12 @@
 // Cloudflare Access の JWT（Cf-Access-Jwt-Assertion ヘッダー）を検証し、ログインした人のメールを返す。
-// /artifacts* と /api/artifacts* は Access のパス別 Application で保護している（決定ログ AD-4）。
-// workers.dev など Access を通らない経路にはヘッダーが無いので、ここで弾かれる。
+// workers.dev とプレビュー URL は Worker 単位の Access で保護する（決定ログ AD-13）。
+// 将来 yoak.tokyo をこの Worker に向けるときは、/artifacts* と /api/artifacts* にパス別の Application を足す（AD-4）。
+// Access を通らない経路にはヘッダーが無いので、ここで弾かれる。
 //
 // 設定（wrangler.jsonc の vars。値は PO が設定する。手順は docs/artifacts/setup.md）:
 //   ACCESS_TEAM_DOMAIN  Zero Trust のチームドメイン（例: yoak.cloudflareaccess.com）
-//   ACCESS_AUD          Access Application の Application Audience (AUD) Tag
+//   ACCESS_AUD          Access Application の Application Audience (AUD) Tag。
+//                       workers.dev とプレビュー URL など Application が複数あるときはカンマ区切りで並べる
 //
 // ローカル開発用（.dev.vars にだけ書く。wrangler.jsonc には書かない）:
 //   ACCESS_DEV_EMAIL    設定されていて、かつ localhost へのリクエストのときだけ、検証せずにこのメールで通す
@@ -44,7 +46,11 @@ export async function getAccessEmail(request: Request, env: AccessEnv): Promise<
   const token = request.headers.get("Cf-Access-Jwt-Assertion");
   if (!token) return null;
 
-  if (!env.ACCESS_TEAM_DOMAIN?.trim() || !env.ACCESS_AUD?.trim()) {
+  const audiences = (env.ACCESS_AUD ?? "")
+    .split(",")
+    .map((aud) => aud.trim())
+    .filter(Boolean);
+  if (!env.ACCESS_TEAM_DOMAIN?.trim() || audiences.length === 0) {
     console.error("ACCESS_TEAM_DOMAIN または ACCESS_AUD が未設定のため、Access の JWT を検証できません");
     return null;
   }
@@ -54,7 +60,7 @@ export async function getAccessEmail(request: Request, env: AccessEnv): Promise<
     // 署名・iss・aud・期限（exp / nbf）を検証する
     const { payload } = await jwtVerify(token, getJwks(issuer), {
       issuer,
-      audience: env.ACCESS_AUD.trim(),
+      audience: audiences,
       algorithms: ["RS256"],
     });
     // サービストークンの JWT には email が無いので通さない
