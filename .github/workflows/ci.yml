@@ -1,0 +1,38 @@
+# PR のマージ判断に使うチェック（B-0 / AD-6）。
+# - main 向けの PR と、main への push で実行
+# - npm ci → lint → 型チェック → build
+#
+# Secrets は使わない。NOTION_TOKEN が無いので、prebuild（scripts/fetch-cms.mjs）は
+# 仮データでビルドする（CMS_REQUIRED は付けない）。
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# 同じ PR（または同じブランチ）の古い実行は取り消す
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: lint・型チェック・build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run build
