@@ -67,3 +67,8 @@ yoak.tokyo の本番では Basic 認証を使わない前提なので、プレ�
 - PM：yoak.tokyo は Cloudflare に無いので、Worker の workers.dev（とプレビュー URL）に Cloudflare Access をかける。workers.dev の Access は Worker 単位なので、コーポレートサイトのプレビューも同じ Google ログインの対象になる
 - Access の JWT が正しいリクエストには Basic 認証をかけない（二重ログインを避ける。AD-8 を置き換える）。JWT が無い経路では今までどおり Basic 認証
 - 将来 yoak.tokyo をこの Worker に向けるときは、AD-4 のパス別 Application を足す（手順書に残す）
+
+## AD-14 一覧の絞り込みはブラウザ側、画面の切り替えで URL は変えない（2026-10-13・PM、リリース1）
+
+- 一覧は全件を取り、キーワード（スペースで AND）・事業・タグの絞り込みはブラウザ側で行う。社内の件数なら十分で、モックの動きに合う。件数が数百を超えたら API の `q`・`tag`・`business` に切り替える
+- 一覧・登録・編集の切り替えで URL は変えない（モックと同じ）。ブラウザの「戻る」で一覧に戻したくなったら見直す
