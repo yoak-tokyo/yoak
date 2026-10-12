@@ -29,3 +29,8 @@
 ## AD-6 PR で lint・型チェック・build を回す CI を足す（2026-10-13・PM）
 
 マージの条件にするため。
+
+## AD-7 マージの判定は GitHub Actions の CI で行う（2026-10-13・PM）
+
+Cloudflare の Workers Builds は、PR（main 以外のブランチ）では変更の中身に関係なく失敗している（#2〜#4 すべて。main ではデプロイが成功）。
+原因はダッシュボードでしか見られないため PO に確認をお願いし（T-2）、それまでマージの判定には GitHub Actions の「lint・型チェック・build」を使う。
