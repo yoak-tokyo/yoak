@@ -73,8 +73,10 @@ npx wrangler secret put TURNSTILE_SECRET_KEY   # Turnstile のシークレット
 Yoak メンバーが作った Claude のアーティファクト（claude.ai のリンク）を登録・一覧・検索するページ。
 計画は `docs/artifacts/plan.md`、決定は `docs/artifacts/decisions.md`。
 
-- `/artifacts*` と `/api/artifacts*` は Cloudflare Access（パス別の Application）で保護し、Basic 認証はかけない
+- 公開先は Worker の workers.dev のアドレス。workers.dev とプレビュー URL に Worker 単位で Cloudflare Access（Google ログイン）をかける。コーポレートサイトのプレビューも同じログインの対象になる
 - Worker（`worker/access.ts`）が `Cf-Access-Jwt-Assertion` を検証して、ログインした人のメールを取り出す
+- `/artifacts*` と `/api/artifacts*` は Access の JWT だけで判定し、Basic 認証はかけない。ほかのページも、JWT が正しければ Basic 認証をかけない（JWT が無ければ今までどおり Basic 認証）
+- 将来 yoak.tokyo をこの Worker に向けるときは、`/artifacts*` と `/api/artifacts*` にパス別の Access Application を足す
 - API は `worker/artifacts.ts`、データは D1（binding 名 `DB`、スキーマは `migrations/`）。D1 が無いあいだは `/api/artifacts*` が 503
 
 Cloudflare の設定（D1 の作成、Access、`ACCESS_TEAM_DOMAIN`・`ACCESS_AUD`）とローカル開発の仕方は `docs/artifacts/setup.md`。
