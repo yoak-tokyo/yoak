@@ -1,0 +1,6 @@
+# ローカル開発用の変数。`cp .dev.vars.example .dev.vars` で作る（.dev.vars はコミットしない）。
+# 手順は docs/artifacts/setup.md の「ローカル開発」。
+
+# Access の JWT を検証せずに、このメールでログインしたことにする。
+# localhost へのリクエストでだけ効く。本番（wrangler.jsonc の vars やシークレット）には絶対に設定しない。
+ACCESS_DEV_EMAIL=you@yoak.tokyo
