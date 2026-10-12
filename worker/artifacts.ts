@@ -1,9 +1,11 @@
 // /api/artifacts* — アーティファクト（claude.ai のリンク）の登録・一覧・検索・更新・削除。
 // 呼ばれる前に worker/index.ts で Access の検証を済ませ、ログインした人のメールを受け取る。
 //
-//   GET    /api/artifacts?q=&tag=  一覧（新しい順）。q はタイトル・説明の部分一致、tag はタグの完全一致
+//   GET    /api/artifacts?q=&tag=&business=  一覧（新しい順）。q はタイトル・説明の部分一致、
+//                                           tag はタグの完全一致、business は事業の完全一致
 //   POST   /api/artifacts          登録（author_email はログインした人のメール）
 //   GET    /api/artifacts/me       ログイン中のメール
+//   GET    /api/artifacts/tags     使われているタグと件数（件数の多い順）
 //   GET    /api/artifacts/:id      1件
 //   PATCH  /api/artifacts/:id      更新（canEdit が許す人だけ）
 //   DELETE /api/artifacts/:id      削除（canEdit が許す人だけ）
@@ -29,11 +31,22 @@ export interface ArtifactsEnv {
   DB?: D1Database;
 }
 
+/**
+ * 事業（AD-10）。1件に1つ必須。画面側も同じ値を持つので、綴りを変えないこと。
+ * 既定値「その他」は migrations/0002_business.sql の DEFAULT と合わせている。
+ */
+export const BUSINESSES = ["Yoak", "nightbrew", "nomitai", "LAMP", "CaseMatch", "その他"] as const;
+export type Business = (typeof BUSINESSES)[number];
+
+const isBusiness = (value: unknown): value is Business =>
+  typeof value === "string" && (BUSINESSES as readonly string[]).includes(value);
+
 type ArtifactRow = {
   id: string;
   url: string;
   title: string;
   description: string;
+  business: Business;
   author_email: string;
   created_at: string;
   updated_at: string;
@@ -42,7 +55,7 @@ type ArtifactRow = {
 
 type Artifact = Omit<ArtifactRow, "tags"> & { tags: string[] };
 
-type ArtifactInput = { url: string; title: string; description: string; tags: string[] };
+type ArtifactInput = { url: string; title: string; description: string; business: Business; tags: string[] };
 
 const URL_PREFIX = "https://claude.ai/";
 const LIMITS = { url: 2048, title: 200, description: 2000, tag: 50, tags: 10, q: 200 };
@@ -64,7 +77,7 @@ export function canEdit(artifact: Pick<Artifact, "author_email">, email: string)
 }
 
 const SELECT_ARTIFACT = `
-  SELECT a.id, a.url, a.title, a.description, a.author_email, a.created_at, a.updated_at,
+  SELECT a.id, a.url, a.title, a.description, a.business, a.author_email, a.created_at, a.updated_at,
     (SELECT json_group_array(name) FROM (SELECT name FROM tags WHERE artifact_id = a.id ORDER BY name)) AS tags
   FROM artifacts a`;
 
@@ -110,6 +123,12 @@ function parseDescription(value: unknown): string {
   return description;
 }
 
+function parseBusiness(value: unknown): Business {
+  if (value === undefined || value === null || value === "") throw "事業を選んでください。";
+  if (!isBusiness(value)) throw `事業は ${BUSINESSES.join(" / ")} のどれかを選んでください。`;
+  return value;
+}
+
 function parseTags(value: unknown): string[] {
   if (value === undefined || value === null) return [];
   if (!Array.isArray(value)) throw "タグの形式が正しくありません。";
@@ -134,6 +153,7 @@ function parseInput(body: Record<string, unknown>, partial: boolean): Partial<Ar
   if (has("url")) input.url = parseUrl(body.url);
   if (has("title")) input.title = parseTitle(body.title);
   if (has("description")) input.description = parseDescription(body.description);
+  if (has("business")) input.business = parseBusiness(body.business);
   if (has("tags")) input.tags = parseTags(body.tags);
   if (partial && Object.keys(input).length === 0) throw "更新する項目がありません。";
   return input;
@@ -164,7 +184,9 @@ const likePattern = (q: string) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 async function listArtifacts(db: D1Database, url: URL): Promise<Response> {
   const q = url.searchParams.get("q")?.trim() ?? "";
   const tag = url.searchParams.get("tag")?.trim() ?? "";
+  const business = url.searchParams.get("business")?.trim() ?? "";
   if (q.length > LIMITS.q || tag.length > LIMITS.tag) return fail("検索条件が長すぎます。", 400);
+  if (business && !isBusiness(business)) return fail("事業の指定が正しくありません。", 400);
 
   const where: string[] = [];
   const params: unknown[] = [];
@@ -176,10 +198,22 @@ async function listArtifacts(db: D1Database, url: URL): Promise<Response> {
     where.push("EXISTS (SELECT 1 FROM tags t WHERE t.artifact_id = a.id AND t.name = ?)");
     params.push(tag);
   }
+  if (business) {
+    where.push("a.business = ?");
+    params.push(business);
+  }
   const sql = `${SELECT_ARTIFACT}${where.length ? ` WHERE ${where.join(" AND ")}` : ""}
     ORDER BY a.created_at DESC, a.id DESC`;
   const { results } = await db.prepare(sql).bind(...params).all<ArtifactRow>();
   return json({ ok: true, artifacts: results.map(toArtifact) });
+}
+
+/** 使われているタグを、使われている件数の多い順に（同数は名前順）。画面のタグ候補用（AD-12） */
+async function listTags(db: D1Database): Promise<Response> {
+  const { results } = await db
+    .prepare("SELECT name, COUNT(*) AS count FROM tags GROUP BY name ORDER BY count DESC, name")
+    .all<{ name: string; count: number }>();
+  return json({ ok: true, tags: results });
 }
 
 async function createArtifact(db: D1Database, request: Request, email: string): Promise<Response> {
@@ -194,10 +228,10 @@ async function createArtifact(db: D1Database, request: Request, email: string): 
   await db.batch([
     db
       .prepare(
-        `INSERT INTO artifacts (id, url, title, description, author_email, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO artifacts (id, url, title, description, business, author_email, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .bind(id, input.url, input.title, input.description, email, now, now),
+      .bind(id, input.url, input.title, input.description, input.business, email, now, now),
     ...tagStatements(db, id, input.tags),
   ]);
   return json({ ok: true, artifact: await findArtifact(db, id) }, 201);
@@ -211,7 +245,7 @@ async function updateArtifact(db: D1Database, request: Request, artifact: Artifa
     return fail(String(message), 400);
   }
   // 送られた列だけを書く（読み取った旧値で書き戻すと、同時に送られた別の項目の変更を消してしまう）
-  const columns = (["url", "title", "description"] as const).filter((key) => input[key] !== undefined);
+  const columns = (["url", "title", "description", "business"] as const).filter((key) => input[key] !== undefined);
   const sets = [...columns.map((key) => `${key} = ?`), "updated_at = ?"];
   const values = [...columns.map((key) => input[key]), new Date().toISOString()];
   await db.batch([
@@ -263,6 +297,12 @@ export async function handleArtifacts(request: Request, env: ArtifactsEnv, email
 
     if (rest === "me") {
       if (method === "GET") return json({ ok: true, email });
+      return fail("Method Not Allowed", 405);
+    }
+
+    // 「tags」という ID と取り違えないよう、:id より先に判定する
+    if (rest === "tags") {
+      if (method === "GET") return await listTags(db);
       return fail("Method Not Allowed", 405);
     }
 
