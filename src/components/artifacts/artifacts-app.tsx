@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { errorMessage, getMe, listArtifacts, type Artifact } from "./api";
+import { errorMessage, getMe, listArtifacts, type Artifact, type Me } from "./api";
 import { ArtifactForm } from "./artifact-form";
 import { ArtifactList, type ChipFilter, type ListStatus } from "./artifact-list";
 import { btnPrimary } from "./styles";
@@ -9,9 +9,9 @@ import { btnPrimary } from "./styles";
 // 一覧・登録・編集を 1 ページで切り替える（静的書き出しのまま動かすため、画面はブラウザの中で切り替える）
 type View = { name: "list" } | { name: "new" } | { name: "edit"; artifact: Artifact };
 
-type Loaded = { ok: true; items: Artifact[]; me: string } | { ok: false; message: string };
+type Loaded = { ok: true; items: Artifact[]; me: Me } | { ok: false; message: string };
 
-/** 一覧とログイン中のメールを一緒に取る */
+/** 一覧とログイン中の人（メール・名前）を一緒に取る */
 async function loadAll(): Promise<Loaded> {
   try {
     const [items, me] = await Promise.all([listArtifacts(), getMe()]);
@@ -24,7 +24,7 @@ async function loadAll(): Promise<Loaded> {
 export function ArtifactsApp() {
   const [view, setView] = useState<View>({ name: "list" });
   const [items, setItems] = useState<Artifact[]>([]);
-  const [me, setMe] = useState<string | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
   const [status, setStatus] = useState<ListStatus>({ state: "loading" });
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<ChipFilter>(null);
@@ -116,7 +116,7 @@ export function ArtifactsApp() {
           <ArtifactList
             items={items}
             status={status}
-            me={me}
+            me={me?.email ?? null}
             q={q}
             filter={filter}
             onQueryChange={setQ}
@@ -132,6 +132,9 @@ export function ArtifactsApp() {
             // 新規と編集、別の行の編集で入力を持ち越さない
             key={view.name === "edit" ? view.artifact.id : "new"}
             editing={view.name === "edit" ? view.artifact : null}
+            // 自分の名前がまだ無いときだけ、登録の画面で名前を聞く（AD-16）。まだ取れていなければ null
+            askName={view.name === "new" ? (me === null ? null : me.name === null) : false}
+            onMe={setMe}
             onBack={() => go({ name: "list" })}
             onSaved={(_, created) => afterMutation(view, created ? "登録しました" : "保存しました")}
             onDeleted={() => afterMutation(view, "削除しました")}

@@ -6,10 +6,13 @@ import {
   createArtifact,
   deleteArtifact,
   errorMessage,
+  getMe,
   listTags,
   updateArtifact,
+  updateMyName,
   type Artifact,
   type ArtifactInput,
+  type Me,
 } from "./api";
 import { btnDanger, btnLine, btnPrimary, btnText, chip, chipOn, danger, input } from "./styles";
 
@@ -18,13 +21,20 @@ const TITLE_MAX = 60;
 const DESCRIPTION_MAX = 200;
 const TAGS_MAX = 5;
 const TAG_MAX = 50;
+// 自分の名前の上限（B-5 の PUT /api/artifacts/me と同じ）
+const NAME_MAX = 30;
 
 const URL_PATTERN = /^https:\/\/claude\.ai\/\S+$/;
 
-type Errors = Partial<Record<"url" | "title" | "business", string>>;
+type Errors = Partial<Record<"name" | "url" | "title" | "business", string>>;
 
-function validate(d: ArtifactInput): Errors {
+function validate(d: ArtifactInput, name: string | null): Errors {
   const e: Errors = {};
+  if (name !== null) {
+    const n = name.trim();
+    if (!n) e.name = "名前を入れてください。";
+    else if ([...n].length > NAME_MAX) e.name = `名前は ${NAME_MAX} 字までです。`;
+  }
   if (!d.url.trim()) e.url = "リンクを貼ってください。";
   else if (!URL_PATTERN.test(d.url.trim())) e.url = "claude.ai のリンクを貼ってください。https://claude.ai/ で始まるものです。";
   if (!d.title.trim()) e.title = "タイトルを入れてください。";
@@ -34,12 +44,21 @@ function validate(d: ArtifactInput): Errors {
 
 export function ArtifactForm({
   editing,
+  askName,
+  onMe,
   onBack,
   onSaved,
   onDeleted,
 }: {
   /** 編集するときの元の登録。無ければ新規登録 */
   editing: Artifact | null;
+  /**
+   * 自分の名前がまだ無い。true なら「あなたの名前」の欄を出し、登録の前に保存する（AD-16）。
+   * null はログイン中の人をまだ取れていない。新規登録ならその場で取り直してから決める
+   */
+  askName: boolean | null;
+  /** ログイン中の人を取り直した・名前を保存できたとき（登録そのものが失敗しても、名前は保存済み） */
+  onMe: (me: Me) => void;
   onBack: () => void;
   onSaved: (artifact: Artifact, created: boolean) => void;
   onDeleted: (id: string) => void;
@@ -52,6 +71,7 @@ export function ArtifactForm({
     business: editing?.business ?? "",
     tags: editing ? [...editing.tags] : [],
   }));
+  const [name, setName] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -61,6 +81,7 @@ export function ArtifactForm({
   const formRef = useRef<HTMLFormElement>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
 
+  const nameId = useId();
   const urlId = useId();
   const titleId = useId();
   const descId = useId();
@@ -105,9 +126,24 @@ export function ArtifactForm({
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (busy) return;
-    const found = validate(draft);
-    setErrors(found);
     setSubmitError(null);
+    // 名前を聞くのは新規登録のときだけ。名前の有無がまだ分からなければ、先に取り直す
+    let askingName = !editing && askName === true;
+    if (!editing && askName === null) {
+      setBusy(true);
+      try {
+        const me = await getMe();
+        onMe(me);
+        askingName = me.name === null;
+      } catch (err) {
+        setSubmitError(errorMessage(err, "保存できませんでした。時間をおいて、もう一度お試しください。"));
+        return;
+      } finally {
+        setBusy(false);
+      }
+    }
+    const found = validate(draft, askingName ? name : null);
+    setErrors(found);
     if (Object.keys(found).length) {
       // 描き直したあとで、最初のまちがいに移る
       requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"], [data-invalid="true"]')?.focus());
@@ -122,6 +158,8 @@ export function ArtifactForm({
     };
     setBusy(true);
     try {
+      // 名前は先に保存する。保存できたら欄は消え、登録が失敗してもやり直しで名前を聞き直さない
+      if (askingName) onMe(await updateMyName(name.trim()));
       const saved = editing ? await updateArtifact(editing.id, body) : await createArtifact(body);
       onSaved(saved, !editing);
     } catch (err) {
@@ -161,6 +199,30 @@ export function ArtifactForm({
       </p>
 
       <form ref={formRef} noValidate onSubmit={onSubmit} className="mt-9 grid gap-7">
+        {askName === true && !isEdit && (
+          <div className="grid gap-2">
+            <label htmlFor={nameId} className="text-[14px] font-medium">
+              あなたの名前 <span className="ml-1.5 text-[11px] font-normal text-mute">必須</span>
+            </label>
+            <input
+              id={nameId}
+              type="text"
+              autoComplete="name"
+              maxLength={NAME_MAX}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              aria-invalid={!!errors.name}
+              aria-describedby={errors.name ? `${nameId}-msg` : undefined}
+              className={input}
+            />
+            {errors.name && (
+              <p id={`${nameId}-msg`} className={`text-[12px] ${danger}`}>
+                {errors.name}
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="grid gap-2">
           <label htmlFor={urlId} className="text-[14px] font-medium">
             claude.ai のリンク <span className="ml-1.5 text-[11px] font-normal text-mute">必須</span>
