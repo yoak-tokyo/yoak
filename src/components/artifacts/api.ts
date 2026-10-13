@@ -1,6 +1,6 @@
 // /api/artifacts*（worker/artifacts.ts）を呼ぶ処理は、すべてこのファイルにまとめる。
 // 認証は Cloudflare Access が済ませているので、ブラウザは同じオリジンに fetch するだけでよい。
-// API の形は docs/artifacts/setup.md の「API の一覧」と docs/artifacts/briefs/B-3.md。
+// API の形は docs/artifacts/setup.md の「API の一覧」と docs/artifacts/briefs/B-3.md・B-5.md。
 
 // 事業の値（AD-10）。worker/artifacts.ts の定数と綴りをそろえる（変えないこと）
 export const BUSINESSES = ["Yoak", "nightbrew", "nomitai", "LAMP", "CaseMatch", "その他"] as const;
@@ -13,6 +13,8 @@ export type Artifact = {
   description: string;
   business: string;
   author_email: string;
+  /** 登録した人の名前（B-5。profiles に無ければ null。古い API では項目ごと無い） */
+  author_name?: string | null;
   created_at: string;
   updated_at: string;
   tags: string[];
@@ -25,6 +27,12 @@ export type ArtifactInput = {
   business: string;
   tags: string[];
 };
+
+/**
+ * ログイン中の人。name は profiles の名前で、まだ無ければ null（B-5）。
+ * 項目ごと無い（undefined）のは名前を扱わない古い API。そのときは名前を聞かない
+ */
+export type Me = { email: string; name?: string | null };
 
 export type TagCount = { name: string; count: number };
 
@@ -72,9 +80,18 @@ export async function listArtifacts(): Promise<Artifact[]> {
   return body.artifacts;
 }
 
-export async function getMe(): Promise<string> {
-  const body = await request<{ email: string }>("/api/artifacts/me");
-  return body.email;
+export async function getMe(): Promise<Me> {
+  const body = await request<{ email: string; name?: string | null }>("/api/artifacts/me");
+  return "name" in body ? { email: body.email, name: body.name || null } : { email: body.email };
+}
+
+/** 自分の名前を保存する（PUT /api/artifacts/me。前後の空白を除いて 1〜30 字） */
+export async function updateMyName(name: string): Promise<Me> {
+  const body = await request<{ email: string; name: string }>("/api/artifacts/me", {
+    method: "PUT",
+    body: JSON.stringify({ name }),
+  });
+  return { email: body.email, name: body.name };
 }
 
 export async function listTags(): Promise<TagCount[]> {

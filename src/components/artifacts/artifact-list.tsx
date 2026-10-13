@@ -16,8 +16,8 @@ function formatDate(iso: string): string {
   return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
 }
 
-/** 登録した人の表示。メールの @ より前だけを出す（名前は API に無い） */
-const authorName = (email: string) => email.split("@")[0] || email;
+/** 登録した人の表示。名前があればそれ、無ければメールの @ より前（AD-16） */
+const authorName = (it: Artifact) => it.author_name?.trim() || it.author_email.split("@")[0] || it.author_email;
 
 /** キーワード（スペースで AND）とチップで絞る。並びは API の新しい順のまま（AD-12） */
 export function filterArtifacts(items: Artifact[], q: string, filter: ChipFilter): Artifact[] {
@@ -25,7 +25,7 @@ export function filterArtifacts(items: Artifact[], q: string, filter: ChipFilter
   return items.filter((it) => {
     if (filter?.kind === "business" && it.business !== filter.value) return false;
     if (filter?.kind === "tag" && !it.tags.includes(filter.value)) return false;
-    const hay = [it.title, it.description, it.business, ...it.tags, it.author_email].join(" ").toLowerCase();
+    const hay = [it.title, it.description, it.business, ...it.tags, it.author_email, it.author_name ?? ""].join(" ").toLowerCase();
     return words.every((w) => hay.includes(w));
   });
 }
@@ -237,7 +237,7 @@ function ArtifactRow({
           </>
         ) : (
           <span className="block truncate" title={it.author_email}>
-            {authorName(it.author_email)}
+            {authorName(it)}
           </span>
         )}
       </span>
