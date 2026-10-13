@@ -21,6 +21,10 @@ export interface AccessEnv {
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
+/** ACCESS_DEV_EMAIL でのローカル開発ログインかどうか */
+const devEmail = (request: Request, env: AccessEnv) =>
+  env.ACCESS_DEV_EMAIL && LOCAL_HOSTS.has(new URL(request.url).hostname) ? env.ACCESS_DEV_EMAIL : null;
+
 // 公開鍵の取得結果は isolate の中で使い回す（jose がキャッシュと鍵の更新を受け持つ）
 const jwksByIssuer = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
@@ -39,9 +43,8 @@ const toIssuer = (teamDomain: string) =>
 
 /** 検証が通ればログインした人のメール（小文字）を、通らなければ null を返す */
 export async function getAccessEmail(request: Request, env: AccessEnv): Promise<string | null> {
-  if (env.ACCESS_DEV_EMAIL && LOCAL_HOSTS.has(new URL(request.url).hostname)) {
-    return env.ACCESS_DEV_EMAIL.trim().toLowerCase();
-  }
+  const dev = devEmail(request, env);
+  if (dev) return dev.trim().toLowerCase();
 
   const token = request.headers.get("Cf-Access-Jwt-Assertion");
   if (!token) return null;
@@ -67,6 +70,47 @@ export async function getAccessEmail(request: Request, env: AccessEnv): Promise<
     return typeof payload.email === "string" && payload.email ? payload.email.toLowerCase() : null;
   } catch (err) {
     console.warn(`Access の JWT の検証に失敗しました: ${(err as Error).message}`);
+    return null;
+  }
+}
+
+/** get-identity を待つ上限（ミリ秒）。超えたら名前なしとして扱う */
+const IDENTITY_TIMEOUT_MS = 3000;
+
+/**
+ * IdP（Google）の名前を Access の get-identity から取る（AD-18、R-1 の A）。
+ * Access の JWT には name が入らないため、JWT を Cookie で渡して get-identity を呼ぶ。
+ * getAccessEmail で検証が通ったリクエストに対してだけ呼ぶこと。
+ * 失敗・タイムアウト・name 無しはすべて null（エラーにしない）。ACCESS_DEV_EMAIL でのローカル開発では呼ばない。
+ * fetchImpl はテストで差し替えるための引数。
+ */
+export async function getAccessIdentityName(
+  request: Request,
+  env: AccessEnv,
+  fetchImpl: typeof fetch = fetch,
+): Promise<string | null> {
+  if (devEmail(request, env)) return null;
+  const token = request.headers.get("Cf-Access-Jwt-Assertion");
+  if (!token || !env.ACCESS_TEAM_DOMAIN?.trim()) return null;
+
+  try {
+    const res = await fetchImpl(`${toIssuer(env.ACCESS_TEAM_DOMAIN)}/cdn-cgi/access/get-identity`, {
+      headers: { Cookie: `CF_Authorization=${token}`, Accept: "application/json" },
+      signal: AbortSignal.timeout(IDENTITY_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      console.warn(`get-identity が ${res.status} を返したため、Google の名前を使いません`);
+      return null;
+    }
+    const identity = (await res.json()) as { name?: unknown } | null;
+    const name = typeof identity?.name === "string" ? identity.name.trim() : "";
+    if (!name) {
+      console.warn("get-identity に name が無いため、Google の名前を使いません");
+      return null;
+    }
+    return name;
+  } catch (err) {
+    console.warn(`get-identity の呼び出しに失敗しました: ${(err as Error).message}`);
     return null;
   }
 }

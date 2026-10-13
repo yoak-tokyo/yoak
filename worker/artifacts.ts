@@ -4,13 +4,16 @@
 //   GET    /api/artifacts?q=&tag=&business=  一覧（新しい順）。q はタイトル・説明の部分一致、
 //                                           tag はタグの完全一致、business は事業の完全一致
 //   POST   /api/artifacts          登録（author_email はログインした人のメール）
-//   GET    /api/artifacts/me       ログイン中のメール
+//   GET    /api/artifacts/me       ログイン中のメールと表示名（無ければ Google の名前を取りにいく。AD-18）
+//   PUT    /api/artifacts/me       表示名を本人が設定する（source: self）
 //   GET    /api/artifacts/tags     使われているタグと件数（件数の多い順）
 //   GET    /api/artifacts/:id      1件
 //   PATCH  /api/artifacts/:id      更新（canEdit が許す人だけ）
 //   DELETE /api/artifacts/:id      削除（canEdit が許す人だけ）
 //
 // データは D1（binding 名 DB、スキーマは migrations/）。DB が無いときは 503 を返す。
+
+import { getAccessIdentityName, type AccessEnv } from "./access";
 
 // D1 の型は @cloudflare/workers-types を入れずに、使う分だけ書く
 interface D1Result<T> {
@@ -27,7 +30,7 @@ export interface D1Database {
   batch(statements: D1PreparedStatement[]): Promise<unknown[]>;
 }
 
-export interface ArtifactsEnv {
+export interface ArtifactsEnv extends AccessEnv {
   DB?: D1Database;
 }
 
@@ -48,6 +51,7 @@ type ArtifactRow = {
   description: string;
   business: Business;
   author_email: string;
+  author_name: string | null; // profiles の名前。無ければ null（画面はメールの @ より前を出す。AD-16）
   created_at: string;
   updated_at: string;
   tags: string; // json_group_array の結果（JSON 文字列）
@@ -77,9 +81,11 @@ export function canEdit(artifact: Pick<Artifact, "author_email">, email: string)
 }
 
 const SELECT_ARTIFACT = `
-  SELECT a.id, a.url, a.title, a.description, a.business, a.author_email, a.created_at, a.updated_at,
+  SELECT a.id, a.url, a.title, a.description, a.business, a.author_email, p.name AS author_name,
+    a.created_at, a.updated_at,
     (SELECT json_group_array(name) FROM (SELECT name FROM tags WHERE artifact_id = a.id ORDER BY name)) AS tags
-  FROM artifacts a`;
+  FROM artifacts a
+  LEFT JOIN profiles p ON p.email = a.author_email`;
 
 function toArtifact(row: ArtifactRow): Artifact {
   let tags: string[] = [];
@@ -269,6 +275,57 @@ async function deleteArtifact(db: D1Database, artifact: Artifact): Promise<Respo
   return json({ ok: true });
 }
 
+// ---------- 表示名（profiles。AD-16・AD-18） ----------
+
+const NAME_MAX = 30;
+
+function parseName(value: unknown): string {
+  if (typeof value !== "string") throw "名前を入力してください。";
+  const name = value.trim();
+  if (!name) throw "名前を入力してください。";
+  // 絵文字などを 1 字と数えるため、コードポイントで数える
+  if ([...name].length > NAME_MAX) throw `名前は ${NAME_MAX} 字以内で入力してください。`;
+  return name;
+}
+
+const findProfileName = async (db: D1Database, email: string) =>
+  (await db.prepare("SELECT name FROM profiles WHERE email = ?").bind(email).first<{ name: string }>())?.name ??
+  null;
+
+async function getMe(db: D1Database, request: Request, env: ArtifactsEnv, email: string): Promise<Response> {
+  const saved = await findProfileName(db, email);
+  if (saved !== null) return json({ ok: true, email, name: saved });
+
+  const googleName = await getAccessIdentityName(request, env);
+  if (!googleName) return json({ ok: true, email, name: null });
+  // 取りにいっているあいだに本人が名前を入れていたら、そちらを残す（self は google で上書きしない）
+  await db
+    .prepare(
+      `INSERT INTO profiles (email, name, source, updated_at) VALUES (?, ?, 'google', ?)
+       ON CONFLICT (email) DO NOTHING`,
+    )
+    .bind(email, googleName, new Date().toISOString())
+    .run();
+  return json({ ok: true, email, name: await findProfileName(db, email) });
+}
+
+async function putMe(db: D1Database, request: Request, email: string): Promise<Response> {
+  let name: string;
+  try {
+    name = parseName((await readBody(request)).name);
+  } catch (message) {
+    return fail(String(message), 400);
+  }
+  await db
+    .prepare(
+      `INSERT INTO profiles (email, name, source, updated_at) VALUES (?, ?, 'self', ?)
+       ON CONFLICT (email) DO UPDATE SET name = excluded.name, source = 'self', updated_at = excluded.updated_at`,
+    )
+    .bind(email, name, new Date().toISOString())
+    .run();
+  return json({ ok: true, email, name });
+}
+
 // ---------- 入口 ----------
 
 export async function handleArtifacts(request: Request, env: ArtifactsEnv, email: string): Promise<Response> {
@@ -296,7 +353,8 @@ export async function handleArtifacts(request: Request, env: ArtifactsEnv, email
     }
 
     if (rest === "me") {
-      if (method === "GET") return json({ ok: true, email });
+      if (method === "GET") return await getMe(db, request, env, email);
+      if (method === "PUT") return await putMe(db, request, email);
       return fail("Method Not Allowed", 405);
     }
 
