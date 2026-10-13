@@ -67,7 +67,8 @@ npx wrangler d1 create yoak-artifacts
 npx wrangler d1 migrations apply DB --remote
 ```
 
-`migrations/` のファイル（`0001_artifacts.sql`、`0002_business.sql` …）がすべて ✅ になれば完了。この変更を PR にして main にマージすると、Workers Builds が D1 つきでデプロイする。
+`migrations/` のファイル（`0001_artifacts.sql`、`0002_business.sql`、`0003_profiles.sql` …）がすべて ✅ になれば完了。
+すでに 0002 まで当てた D1 でも、同じコマンドで未適用の分（0003 など）だけが当たる。この変更を PR にして main にマージすると、Workers Builds が D1 つきでデプロイする。
 
 > 順番の注意：マイグレーションを当てる前に D1 つきでデプロイされると、`/api/artifacts*` が「テーブルが無い」で 500 になる。マイグレーションを先に当てる。
 
@@ -159,7 +160,7 @@ workers.dev の URL は、**Workers & Pages** → `yoak-corporate-site` → **Se
 
 1. シークレットウィンドウで `<workers.dev の URL>/artifacts` を開く → Access のログイン画面が出る
 2. 許可したアカウントで Google ログイン → ページが出る（画面ができるまでは 404 ページ）。Basic 認証は出ない
-3. 同じウィンドウで `<workers.dev の URL>/api/artifacts/me` → `{"ok":true,"email":"<自分のメール>"}`
+3. 同じウィンドウで `<workers.dev の URL>/api/artifacts/me` → `{"ok":true,"email":"<自分のメール>","name":...}`。`name` に Google の名前が入っていれば、Google から名前が取れている（`null` なら取れていないので、本人が画面で入れる。AD-18）。`<workers.dev の URL>/cdn-cgi/access/get-identity` を開くと、Access が返す情報（`name` の有無）を直接見られる
 4. 同じウィンドウで `<workers.dev の URL>/` → コーポレートサイトのトップが Basic 認証なしで出る
 5. 別のシークレットウィンドウで、許可していないアカウントでログイン → Access の拒否画面
 6. PR のプレビュー URL（PR の Workers Builds の結果などにある）を開く → 同じ Google ログインが出て、ログインするとページが出る
@@ -190,7 +191,7 @@ yoak.tokyo を Cloudflare に移してこの Worker で配信するときは、`
 確かめ方：
 
 1. シークレットウィンドウで `https://yoak.tokyo/artifacts` → Access のログイン画面 → 許可したアカウントでページが出る
-2. `https://yoak.tokyo/api/artifacts/me` → `{"ok":true,"email":"<自分のメール>"}`
+2. `https://yoak.tokyo/api/artifacts/me` → `{"ok":true,"email":"<自分のメール>","name":...}`
 3. `https://yoak.tokyo/` などほかのページは、ログインなしで見られる（本番では Basic 認証のパスワードを外しておく）
 
 ---
@@ -215,6 +216,7 @@ npx wrangler dev -c wrangler.local.jsonc  # http://localhost:8787
 
 ```sh
 curl http://localhost:8787/api/artifacts/me
+curl -X PUT http://localhost:8787/api/artifacts/me -H 'Content-Type: application/json' -d '{"name":"山田 太郎"}'
 curl -X POST http://localhost:8787/api/artifacts -H 'Content-Type: application/json' \
   -d '{"url":"https://claude.ai/public/artifacts/xxx","title":"テスト","description":"説明","business":"Yoak","tags":["営業"]}'
 curl 'http://localhost:8787/api/artifacts?business=Yoak&q=テスト&tag=営業'
@@ -229,14 +231,15 @@ curl http://localhost:8787/api/artifacts/tags
 | --- | --- |
 | `GET /api/artifacts?q=&tag=&business=` | 一覧（新しい順）。`q` はタイトル・説明の部分一致、`tag` はタグの完全一致、`business` は事業の完全一致（組み合わせると AND。事業の値が 6 つ以外なら 400）。`{ ok, artifacts: [...] }` |
 | `POST /api/artifacts` | 登録。本文 `{ url, title, business, description?, tags? }`。`{ ok, artifact }`（201） |
-| `GET /api/artifacts/me` | ログイン中のメール。`{ ok, email }` |
+| `GET /api/artifacts/me` | ログイン中のメールと表示名。`{ ok, email, name }`（`name` は `string \| null`）。保存した名前が無ければ Access の get-identity から Google の名前を取りにいき、取れたら保存する。取れなければ `null`（ローカル開発の `ACCESS_DEV_EMAIL` では取りにいかない） |
+| `PUT /api/artifacts/me` | 表示名を本人が設定する。本文 `{ name }`（前後の空白を取って 1〜30 字。不正なら 400）。`{ ok, email, name }`。本人が入れた名前は Google の名前で上書きされない |
 | `GET /api/artifacts/tags` | 使われているタグと件数。件数の多い順（同数は名前順）。`{ ok, tags: [{ name, count }] }` |
 | `GET /api/artifacts/:id` | 1 件。`{ ok, artifact }` |
 | `PATCH /api/artifacts/:id` | 更新（登録した本人だけ。他人は 403）。送った項目だけ変わる。`tags` を送ると置き換え |
 | `DELETE /api/artifacts/:id` | 削除（登録した本人だけ。他人は 403） |
 
-`artifact` の形：`{ id, url, title, description, business, author_email, created_at, updated_at, tags: string[] }`
+`artifact` の形：`{ id, url, title, description, business, author_email, author_name, created_at, updated_at, tags: string[] }`（`author_name` は登録者の表示名。名前が無ければ `null` なので、画面はメールの @ より前を出す。AD-16）
 
 入力の決まり：`url` は `https://claude.ai/` で始まる 2048 文字以内、`title` は必須で 200 文字以内、`description` は 2000 文字以内、`business` は必須で `Yoak` / `nightbrew` / `nomitai` / `LAMP` / `CaseMatch` / `その他` のどれか（綴りどおり。値の一覧は `worker/artifacts.ts` の `BUSINESSES`。B-3 より前に登録した分は `その他`）、`tags` は 1 個 50 文字以内で 10 個まで（前後の空白は取り、重複はまとめる）。
 PATCH は送った項目だけを変える（`business` も送ったときだけ変わる）。
-POST・PATCH は `Content-Type: application/json` で送る。別のサイトからの書き込み（`Origin` が違う）は 403。
+POST・PATCH・PUT は `Content-Type: application/json` で送る。別のサイトからの書き込み（`Origin` が違う）は 403。
